@@ -8,6 +8,7 @@ class Xml constructor( val header: String, var root: Entity){
     }
 
     fun printModel(){
+        println(header)
         println(root.serialization())
     }
 
