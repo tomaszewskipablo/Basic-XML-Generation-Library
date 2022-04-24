@@ -10,7 +10,12 @@ fun main() {
     val eSub2 = EntityConcrete("nameSub2Sub1","textBSub2",root)
     val eSub2Sub1 = Entity("partanInParent",root)
 
-    val x = root.search("nameSub2Sub1")
+    val x = root.search(::innerTextLonger)
     xml.printModel()
 
 }
+
+// Accept criteria
+fun nameStartsWith (n:EntityConcrete) = n.name.startsWith("name")
+fun innerTextLonger (n:EntityConcrete) = n.innerText.length > 6
+

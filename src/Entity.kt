@@ -1,3 +1,5 @@
+import java.io.File
+
 abstract class EntityAbstract(val name: String, val parent: Entity? = null) {
     init {
         parent?.children?.add(this)
@@ -21,14 +23,14 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         v.endVisit(this)
     }
 
-    // Search for entity by name, TODO search by creteria
-    fun search(name: String): EntityConcrete?{
+    fun search(accept: (EntityConcrete) -> Boolean = {true}): List<EntityConcrete>{
+        val concreteEntitiesList = mutableListOf<EntityConcrete>()
         var entity: EntityConcrete? = null
 
         val searchVisitor = object : Visitor {
             override fun visit(e: EntityConcrete) {
-                if (e.name == name)
-                    entity = e
+                if (accept(e))
+                    concreteEntitiesList.add(e)
             }
 
             override fun visit(e: Entity): Boolean { // it can't have name to check, so we just if element is not found, if not true to continue
@@ -36,7 +38,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
             }
         }
         this.accept(searchVisitor)
-        return entity
+        return concreteEntitiesList
     }
 
     fun serialization() : String{
@@ -82,6 +84,5 @@ interface Visitor {
     fun visit(e: Entity) = true
     fun endVisit(e: Entity) {}
 }
-
 
 
