@@ -16,6 +16,8 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
                 it.accept(v)
             }
         }
+
+        v.endVisit(this)
     }
 
     // Search for entity by name, TODO search by creteria
@@ -35,6 +37,26 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         this.accept(searchVisitor)
         return entity
     }
+
+    fun serialization() {
+        accept(object : Visitor {
+            var depth = 0
+            override fun visit(e: EntityConcrete) {
+                println("\t".repeat(depth) + "<" + e.name + ">" + "</" + e.name + ">")
+            }
+
+            override fun visit(e: Entity): Boolean {
+                println("\t".repeat(depth) + "<" + e.name + " " + e.attributes +">")
+                depth++
+                return true
+            }
+
+            override fun endVisit(e: Entity) {
+                depth--
+                println("\t".repeat(depth) + "</" + e.name + ">")
+            }
+        })
+    }
 }
 
 class EntityConcrete(name: String, textBetweenEntities:String, parent: Entity? = null) : EntityAbstract(name, parent) {
@@ -46,6 +68,7 @@ class EntityConcrete(name: String, textBetweenEntities:String, parent: Entity? =
 interface Visitor {
     fun visit(e: EntityConcrete) {}
     fun visit(e: Entity) = true
+    fun endVisit(e: Entity) {}
 }
 
 

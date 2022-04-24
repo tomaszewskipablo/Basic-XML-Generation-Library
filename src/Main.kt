@@ -8,6 +8,7 @@ fun main() {
     val eSub2Sub1 = Entity("partanInParent",root)
     val xml = EntityConcrete("nameSub2Sub1", "textBSub2", eSub2Sub1)
     val x = root.search("nameSub2Sub1")
+    root.serialization()
     print("s");
 
 }
