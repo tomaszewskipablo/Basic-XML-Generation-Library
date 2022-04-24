@@ -42,7 +42,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         accept(object : Visitor {
             var depth = 0
             override fun visit(e: EntityConcrete) {
-                println("\t".repeat(depth) + "<" + e.name + ">" + "</" + e.name + ">")
+                println("\t".repeat(depth) + "<" + e.name + ">" + e.innerText + "</" + e.name + ">")
             }
 
             override fun visit(e: Entity): Boolean {
@@ -59,7 +59,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     }
 }
 
-class EntityConcrete(name: String, textBetweenEntities:String, parent: Entity? = null) : EntityAbstract(name, parent) {
+class EntityConcrete(name: String, val innerText:String, parent: Entity? = null) : EntityAbstract(name, parent) {
     override fun accept(v: Visitor) {
         v.visit(this)
         }
