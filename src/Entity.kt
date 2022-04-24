@@ -8,7 +8,8 @@ abstract class EntityAbstract(val name: String, val parent: Entity? = null) {
 
 class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent) {
     val children = mutableListOf<EntityAbstract>()
-    val attributes = mutableListOf<String>()
+    val attributes = HashMap<String, String>()
+
 
     override fun accept(v: Visitor) {
         if(v.visit(this)) { // if any children
@@ -38,24 +39,35 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         return entity
     }
 
-    fun serialization() {
+    fun serialization() : String{
+
+        var xmlText = ""
         accept(object : Visitor {
             var depth = 0
             override fun visit(e: EntityConcrete) {
-                println("\t".repeat(depth) + "<" + e.name + ">" + e.innerText + "</" + e.name + ">")
+                xmlText += "\t".repeat(depth) + "<" + e.name + ">" + e.innerText + "</" + e.name + ">" + "\n"
             }
 
             override fun visit(e: Entity): Boolean {
-                println("\t".repeat(depth) + "<" + e.name + " " + e.attributes +">")
+                xmlText += "\t".repeat(depth) + "<" + e.name + wirteAttributes(e.attributes) +">" + "\n"
                 depth++
                 return true
             }
 
             override fun endVisit(e: Entity) {
                 depth--
-                println("\t".repeat(depth) + "</" + e.name + ">")
+                xmlText += "\t".repeat(depth) + "</" + e.name + ">" +"\n"
             }
         })
+        return xmlText
+    }
+
+    fun wirteAttributes(att:HashMap<String, String>):String{
+        var attributes = ""
+        att.forEach(){
+            attributes += " " + it.key + "=\"" + it.value + "\""
+    }
+        return attributes
     }
 }
 
