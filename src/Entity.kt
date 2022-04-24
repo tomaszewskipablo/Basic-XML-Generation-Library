@@ -1,4 +1,7 @@
 import java.io.File
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.hasAnnotation
 
 abstract class EntityAbstract(val name: String, val parent: Entity? = null) {
     init {
@@ -84,5 +87,6 @@ interface Visitor {
     fun visit(e: Entity) = true
     fun endVisit(e: Entity) {}
 }
+
 
 
