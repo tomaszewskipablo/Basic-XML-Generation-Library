@@ -6,7 +6,8 @@ data class Student(
     val name: String,
     @XmlIgnore
     val secondName: String,
-    val type: StudentType? = null
+    val type: StudentType? = null,
+    val lista: List<String> = listOf("Ajay","Vijay","Prakash")
 )
 
 enum class StudentType {

@@ -20,7 +20,12 @@ class Xml constructor( val header: String){
                 if (!Ignore(it)) {
                     if (it.returnType.classifier.isCollection()) // is dataClass or List
                     {
-                        createXMLObject(it, Entity(fieldName(it), parent))
+                        val e = Entity(it.name, parent)
+                        val coll = it.call(o) as Collection<*>
+                        coll.forEach{
+                            if(it != null)
+                                createXMLObject(it, e)
+                        }
                     } else if (it.returnType.classifier.isEnum())    // Enum
                         EntityConcrete(fieldName(it), innerText(it,o), parent)
                     else    // Primitive type
