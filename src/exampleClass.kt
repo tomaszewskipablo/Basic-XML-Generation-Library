@@ -2,7 +2,7 @@
 data class Student(
     @XmlTagContent("bigNumber")
     val number: Int,
-    @XmlTagContent("smallNumber")
+    //@XmlTagContent("smallNumber")
     val name: String,
     @XmlIgnore
     val secondName: String,

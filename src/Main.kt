@@ -12,7 +12,7 @@ fun main() {
 
     val s1 = Student(7, "Cristiano", "Ronaldo", StudentType.Doctoral)
 
-    xml.serialize(s1)
+    xml.createXMLObject(s1, null)
     val x = xml.search(::innerTextLonger)
 
     xml.printModel()
