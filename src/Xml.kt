@@ -27,9 +27,28 @@ class Xml constructor( val header: String){
                                 createXMLObject(it, e)
                         }
                     } else if (it.returnType.classifier.isEnum())    // Enum
-                        EntityConcrete(fieldName(it), innerText(it,o), parent)
+                    {
+                        if(innerText(it,o)) {
+                            parent!!.attributes[fieldName(it)] = it.call(o).toString()
+                        }
+                        else{
+                            EntityConcrete(fieldName(it), it.call(o).toString(), parent)
+                        }
+                    }
+                    else if(it.call(o)!!::class.isData)
+                    {
+                        val e = Entity(it.name, parent)
+                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), e)
+                    }
                     else    // Primitive type
-                        EntityConcrete(fieldName(it), innerText(it,o), parent)
+                    {
+                            if(innerText(it,o)) {
+                                parent!!.attributes[fieldName(it)] = it.call(o).toString()
+                            }
+                            else{
+                                EntityConcrete(fieldName(it), it.call(o).toString(), parent)
+                            }
+                    }
                 }
             }
         }
@@ -53,8 +72,8 @@ class Xml constructor( val header: String){
         else c.name
 
     private fun innerText(c: KProperty<*>, o:Any) =
-        if(c.hasAnnotation<XmlTagContent>()) c.findAnnotation<XmlTagContent>()!!.text
-        else c.call(o).toString()
+        if(c.hasAnnotation<XmlTagContent>()) true
+        else false
 
     private fun Ignore(c: KProperty<*>) =
         c.hasAnnotation<XmlIgnore>()

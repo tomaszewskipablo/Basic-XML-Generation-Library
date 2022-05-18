@@ -9,4 +9,4 @@ annotation class XmlIgnore
 
 // define which object property will be used for the content between the tags
 @Target(AnnotationTarget.PROPERTY)
-annotation class XmlTagContent(val text: String)
+annotation class XmlTagContent

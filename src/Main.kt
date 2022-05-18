@@ -10,7 +10,8 @@ fun main() {
     val eSub2 = EntityConcrete("nameSub2Sub1","textBSub2",root)
     val eSub2Sub1 = Entity("partanInParent",root)*/
 
-    val s1 = Student(7, "Cristiano", "Ronaldo", StudentType.Doctoral)
+    val b = Book("sds","sda")
+    val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
 
     xml.createXMLObject(s1, null)
     val x = xml.search(::innerTextLonger)

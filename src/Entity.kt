@@ -13,7 +13,7 @@ abstract class EntityAbstract(val name: String, val parent: Entity? = null) {
 
 class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent) {
     val children = mutableListOf<EntityAbstract>()
-    val attributes = HashMap<String, String>()
+    var attributes = HashMap<String, String>()
 
 
     override fun accept(v: Visitor) {
