@@ -36,7 +36,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
                     concreteEntitiesList.add(e)
             }
 
-            override fun visit(e: Entity): Boolean { // it can't have name to check, so we just if element is not found, if not true to continue
+            override fun visit(e: Entity): Boolean {
                 return entity == null
             }
         }
