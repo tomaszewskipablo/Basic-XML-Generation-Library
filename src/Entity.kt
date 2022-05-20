@@ -3,7 +3,7 @@ import kotlin.reflect.KProperty
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 
-abstract class EntityAbstract(val name: String, val parent: Entity? = null) {
+abstract class EntityAbstract(var name: String, var parent: Entity? = null) {
     init {
         parent?.children?.add(this)
     }

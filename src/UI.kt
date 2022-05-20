@@ -11,7 +11,7 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 
-class ComponentSkeleton(val text: String,val entity: Entity? = null) : JPanel() {
+class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() {
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         g.font = Font("Arial", Font.BOLD, 16)
@@ -27,25 +27,54 @@ class ComponentSkeleton(val text: String,val entity: Entity? = null) : JPanel() 
         createPopupMenu()
     }
 
+    fun removeChild(componentToBeRemoved: ComponentSkeleton){
+        this.remove(componentToBeRemoved)
+        repaint()
+    }
+
     private fun createPopupMenu() {
         val popupmenu = JPopupMenu("Actions")
-        val a = JMenuItem("Add child")
+        val a = JMenuItem("Add Tag")
         a.addActionListener {
-            val text = JOptionPane.showInputDialog("text")
+            val text = JOptionPane.showInputDialog("Tag name")
             add(ComponentSkeleton(text, Entity(text,entity)))
             revalidate()
         }
         popupmenu.add(a)
 
-        val b = JMenuItem("Add child")
+        val b = JMenuItem("Add attribute")
         b.addActionListener {
-            val text = JOptionPane.showInputDialog("text")
+            val text = JOptionPane.showInputDialog("attribute name")
             add(JLabel(text))
             EntityConcrete(text, text, entity)
             revalidate()
         }
         popupmenu.add(b)
 
+        val c = JMenuItem("Rename")
+        c.addActionListener {
+            val text = JOptionPane.showInputDialog("Rename")
+            this.text = text
+            this.entity!!.name = text
+            repaint()
+        }
+        popupmenu.add(c)
+
+        val d = JMenuItem("delete")
+        d.addActionListener {
+            if(JOptionPane.showConfirmDialog(null,"Are you sure?") == 0) {
+                    if(this.entity!!.parent == null){ //ROOT TO be removed
+                        val c = this.parent.parent.parent as JScrollPane
+                        c.viewport.remove(this)
+                    }
+                else {
+                        this.entity!!.parent!!.children.remove(this.entity)
+                        val c = this.parent as ComponentSkeleton
+                        c.removeChild(this)
+                    }
+            }
+        }
+        popupmenu.add(d)
 
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -57,15 +86,13 @@ class ComponentSkeleton(val text: String,val entity: Entity? = null) : JPanel() 
 }
 
 class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
-    var componentSkeleton = ComponentSkeleton("sd")
+    var componentSkeleton = ComponentSkeleton("")
     var jScrollPane = JScrollPane()
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-        size = Dimension(900, 1000)
+        size = Dimension(700, 1000)
         layout = BorderLayout()
-
         add(jScrollPane)
-
 
         var serializeButton = JButton("Serialize")
         serializeButton.setBounds(0,230,50,20)
@@ -73,13 +100,21 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
             println(root!!.serialization()) }
 
         var loadButton = JButton("Load")
-
-
         loadButton.addActionListener {
             val b = Book("sds","sda")
             val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
             createXMLObject(s1)
         }
+
+        var createRootElementButton = JButton("Create new root")
+        createRootElementButton.addActionListener {
+            val text = JOptionPane.showInputDialog("text")
+            root = Entity(text, null)
+            componentSkeleton = ComponentSkeleton(text,root)
+            jScrollPane.viewport.add(componentSkeleton)
+            repaint()
+        }
+        add(createRootElementButton, BorderLayout.WEST)
         add(loadButton, BorderLayout.SOUTH)
         add(serializeButton, BorderLayout.NORTH)
 
@@ -98,7 +133,6 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
             jScrollPane.viewport.add(componentSkeleton)
             repaint()
             createXMLObject(o, componentSkeleton)
-
         }
         else {
             obj.declaredMemberProperties.forEach {
