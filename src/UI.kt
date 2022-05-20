@@ -171,18 +171,18 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
         else {
             obj.declaredMemberProperties.forEach {
                 if (!Ignore(it)) {
-                    if (it.returnType.classifier.isCollection()) // is dataClass or List
+                    if (it.returnType.classifier.isCollection())
                     {
                         if(innerText(it,o)) {
-                            var s = it.name
-                            val e = Entity(it.name, parentComponentSkeleton!!.entity)
+                            var listName = it.name
+                            val e = Entity(it.name, parentComponentSkeleton.entity)
                             val listElement = ComponentSkeleton(it.name, e)
                             parentComponentSkeleton.add(listElement)
                             val coll = it.call(o) as Collection<*>
                             coll.forEach {
                                 if (it != null){
-                                    listElement.add(ConcreteEntityComponent(s, it.toString()))
-                                    EntityConcrete(s, it.toString(), parentComponentSkeleton.entity)
+                                    listElement.add(ConcreteEntityComponent(listName, it.toString()))
+                                    EntityConcrete(listName, it.toString(), listElement.entity)
                                     revalidate()
 
                                 }
@@ -193,7 +193,7 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
                             parentComponentSkeleton.entity!!.attributes[it.name] = it.call(o).toString()
                             parentComponentSkeleton!!.add(AttributeComponent(it.name,coll.toString()))
                         }
-                    } else if (it.returnType.classifier.isEnum())    // Enum
+                    } else if (it.returnType.classifier.isEnum())
                     {
                         if(innerText(it,o)) {
                             parentComponentSkeleton.add(ConcreteEntityComponent(fieldName(it),it.call(o).toString()))
@@ -215,7 +215,7 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
                         createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), newComponent)
                         revalidate()
                     }
-                    else    // Primitive type
+                    else
                     {
                         if(innerText(it,o)) {
                             parentComponentSkeleton.entity!!.attributes[it.name] = it.call(o).toString()
@@ -223,10 +223,6 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
                             revalidate()
                         }
                         else{
-/*                            EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
-                            parentComponentSkeleton.add(JLabel(fieldName(it)))
-                            revalidate()*/
-
                             parentComponentSkeleton.add(ConcreteEntityComponent(fieldName(it), it.call(o).toString()))
                             EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
                             revalidate()
