@@ -11,6 +11,30 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 
+
+class AttributeComponent(var nameAttribute: String, var insideTextField:String = "") : JPanel() {
+
+    init {
+        layout = GridLayout(1, 2)
+
+        setMaximumSize(Dimension(50, 15) )
+        add(JLabel(nameAttribute))
+        add(JTextField(insideTextField))
+    }
+}
+
+class ConcreteEntityComponent(var text: String,var insideTextField:String = "") : JPanel() {
+
+    init {
+        layout = BorderLayout()
+
+        setMaximumSize(Dimension(50, 15) )
+        name = text
+        add(JLabel(text),BorderLayout.NORTH)
+        add(JTextField(insideTextField),BorderLayout.CENTER)
+    }
+}
+
 class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() {
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
@@ -45,11 +69,21 @@ class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() 
         val b = JMenuItem("Add attribute")
         b.addActionListener {
             val text = JOptionPane.showInputDialog("attribute name")
-            add(JLabel(text))
-            EntityConcrete(text, text, entity)
+            add(AttributeComponent(text))
+            //EntityConcrete(text, text, entity)
+            this.entity!!.attributes[text] = ""
             revalidate()
         }
         popupmenu.add(b)
+
+        val en = JMenuItem("Add section")
+        en.addActionListener {
+            val text = JOptionPane.showInputDialog("attribute name")
+            add(ConcreteEntityComponent(text))
+            EntityConcrete(text, text, entity)
+            revalidate()
+        }
+        popupmenu.add(en)
 
         val c = JMenuItem("Rename")
         c.addActionListener {
@@ -101,7 +135,7 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
 
         var loadButton = JButton("Load")
         loadButton.addActionListener {
-            val b = Book("sds","sda")
+            val b = Book("ToPOWINNOBYC","WSORKU BOOK")
             val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
             createXMLObject(s1)
         }
@@ -142,46 +176,59 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
                         if(innerText(it,o)) {
                             var s = it.name
                             val e = Entity(it.name, parentComponentSkeleton!!.entity)
-                            add(ComponentSkeleton(it.name, e))
+                            val listElement = ComponentSkeleton(it.name, e)
+                            parentComponentSkeleton.add(listElement)
                             val coll = it.call(o) as Collection<*>
                             coll.forEach {
                                 if (it != null){
-                                    parentComponentSkeleton.add(JLabel(it.toString()))
+                                    listElement.add(ConcreteEntityComponent(s, it.toString()))
+                                    EntityConcrete(s, it.toString(), parentComponentSkeleton.entity)
                                     revalidate()
-                                    EntityConcrete(s, it.toString(), e)
+
                                 }
                             }
                         }
                         else{
                             val coll = it.call(o) as Collection<*>
-                            //parent!!.attributes[it.name] = coll.toString()
+                            parentComponentSkeleton.entity!!.attributes[it.name] = it.call(o).toString()
+                            parentComponentSkeleton!!.add(AttributeComponent(it.name,coll.toString()))
                         }
                     } else if (it.returnType.classifier.isEnum())    // Enum
                     {
                         if(innerText(it,o)) {
-                            //parent!!.attributes[fieldName(it)] = it.call(o).toString()
+                            parentComponentSkeleton.add(ConcreteEntityComponent(fieldName(it),it.call(o).toString()))
+                            parentComponentSkeleton.entity!!.attributes[it.name] = it.call(o).toString()
+                            revalidate()
                         }
                         else{
-                            parentComponentSkeleton.add(JLabel(fieldName(it)))
-                            revalidate()
+                            parentComponentSkeleton.add(ConcreteEntityComponent(it.name,it.call(o).toString()))
                             EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
+                            revalidate()
                         }
                     }
                     else if(it.call(o)!!::class.isData)
                     {
                         var e = Entity(it.name,parentComponentSkeleton.entity)
-                        parentComponentSkeleton!!.add(ComponentSkeleton(it.name, e))
+
+                        var newComponent = ComponentSkeleton(it.name, e)
+                        parentComponentSkeleton.add(newComponent)
+                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), newComponent)
                         revalidate()
-                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), parentComponentSkeleton)
                     }
                     else    // Primitive type
                     {
                         if(innerText(it,o)) {
-                            //parent!!.attributes[fieldName(it)] = it.call(o).toString()
+                            parentComponentSkeleton.entity!!.attributes[it.name] = it.call(o).toString()
+                            parentComponentSkeleton!!.add(AttributeComponent(fieldName(it),it.call(o).toString()))
+                            revalidate()
                         }
                         else{
-                            EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
+/*                            EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
                             parentComponentSkeleton.add(JLabel(fieldName(it)))
+                            revalidate()*/
+
+                            parentComponentSkeleton.add(ConcreteEntityComponent(fieldName(it), it.call(o).toString()))
+                            EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
                             revalidate()
                         }
                     }

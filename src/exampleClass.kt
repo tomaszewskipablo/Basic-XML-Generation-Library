@@ -15,8 +15,9 @@ data class Student(
 
 @XmlName("BOOK")
 data class Book(
+    @XmlTagContent
     val name: String,
-    @XmlIgnore
+    //@XmlIgnore
     val secondName: String,
 )
 
