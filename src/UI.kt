@@ -3,6 +3,13 @@ import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
 import javax.swing.border.CompoundBorder
+import kotlin.reflect.KClass
+import kotlin.reflect.KClassifier
+import kotlin.reflect.KProperty
+import kotlin.reflect.full.declaredMemberProperties
+import kotlin.reflect.full.findAnnotation
+import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.full.isSubclassOf
 
 class ComponentSkeleton(val text: String,val entity: Entity? = null) : JPanel() {
     override fun paintComponent(g: Graphics) {
@@ -49,40 +56,135 @@ class ComponentSkeleton(val text: String,val entity: Entity? = null) : JPanel() 
     }
 }
 
-class WindowSkeleton(var root: Entity) : JFrame("title") {
-
+class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
+    var componentSkeleton = ComponentSkeleton("sd")
+    var jScrollPane = JScrollPane()
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-        size = Dimension(300, 300)
+        size = Dimension(900, 1000)
+        layout = BorderLayout()
+
+        add(jScrollPane)
+
 
         var serializeButton = JButton("Serialize")
-        serializeButton.setBounds(0,230,100,20)
+        serializeButton.setBounds(0,230,50,20)
         serializeButton.addActionListener {
-            println(root.serialization()) }
-        add(serializeButton)
+            println(root!!.serialization()) }
+
         var loadButton = JButton("Load")
-        loadButton.setBounds(100,230,100,20)
 
 
         loadButton.addActionListener {
-            println("root.load()") }
-        add(loadButton)
-        add(ComponentSkeleton("root", root))
+            val b = Book("sds","sda")
+            val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
+            createXMLObject(s1)
+        }
+        add(loadButton, BorderLayout.SOUTH)
+        add(serializeButton, BorderLayout.NORTH)
+
         }
 
     fun open() {
         isVisible = true
     }
+
+    fun createXMLObject(o: Any, parentComponentSkeleton: ComponentSkeleton?=null){
+
+        val obj = o::class
+        if(parentComponentSkeleton == null) {
+            root = Entity(tableName(obj).toString(), null)
+            componentSkeleton = ComponentSkeleton(tableName(obj).toString(),root)
+            jScrollPane.viewport.add(componentSkeleton)
+            repaint()
+            createXMLObject(o, componentSkeleton)
+
+        }
+        else {
+            obj.declaredMemberProperties.forEach {
+                if (!Ignore(it)) {
+                    if (it.returnType.classifier.isCollection()) // is dataClass or List
+                    {
+                        if(innerText(it,o)) {
+                            var s = it.name
+                            val e = Entity(it.name, parentComponentSkeleton!!.entity)
+                            add(ComponentSkeleton(it.name, e))
+                            val coll = it.call(o) as Collection<*>
+                            coll.forEach {
+                                if (it != null){
+                                    parentComponentSkeleton.add(JLabel(it.toString()))
+                                    revalidate()
+                                    EntityConcrete(s, it.toString(), e)
+                                }
+                            }
+                        }
+                        else{
+                            val coll = it.call(o) as Collection<*>
+                            //parent!!.attributes[it.name] = coll.toString()
+                        }
+                    } else if (it.returnType.classifier.isEnum())    // Enum
+                    {
+                        if(innerText(it,o)) {
+                            //parent!!.attributes[fieldName(it)] = it.call(o).toString()
+                        }
+                        else{
+                            parentComponentSkeleton.add(JLabel(fieldName(it)))
+                            revalidate()
+                            EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
+                        }
+                    }
+                    else if(it.call(o)!!::class.isData)
+                    {
+                        var e = Entity(it.name,parentComponentSkeleton.entity)
+                        parentComponentSkeleton!!.add(ComponentSkeleton(it.name, e))
+                        revalidate()
+                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), parentComponentSkeleton)
+                    }
+                    else    // Primitive type
+                    {
+                        if(innerText(it,o)) {
+                            //parent!!.attributes[fieldName(it)] = it.call(o).toString()
+                        }
+                        else{
+                            EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
+                            parentComponentSkeleton.add(JLabel(fieldName(it)))
+                            revalidate()
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun tableName(c: KClass<*>) =
+        if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
+        else c.simpleName
+
+    private fun fieldName(c: KProperty<*>) =
+        if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
+        else c.name
+
+    private fun innerText(c: KProperty<*>, o:Any) =
+        if(c.hasAnnotation<XmlTagContent>()) true
+        else false
+
+    private fun Ignore(c: KProperty<*>) =
+        c.hasAnnotation<XmlIgnore>()
+
+
+    fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
+    fun KClassifier?.isCollection() = this is KClass<*> && this.isSubclassOf(Collection::class)
 }
+
+
 
 fun main() {
     var xml = Xml("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>")
-    var root = Entity("root",null)
-    val w = WindowSkeleton(root)
+    //var root = Entity("rootsad",null)
+    val w = WindowSkeleton()
 
-    val b = Book("sds","sda")
+    val b = Book("title","JK ROwling")
     val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
-
-    //xml.createXMLObject(s1, null)
+    //w.createXMLObject(s1, null)
     w.open()
 }
