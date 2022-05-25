@@ -29,6 +29,12 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         }
     }
 
+    fun addEntity(entity: Entity){
+        notifyObservers {
+            it(TypeEvent.Add, "","", entity)
+        }
+    }
+
     override var name: String = name
         set(value) {
             field=value
@@ -127,4 +133,4 @@ interface IObservable<O> {
 
 typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, entity: Entity?) -> Unit
 
-enum class TypeEvent {Rename,Remove, Add}
+enum class TypeEvent {Rename,Remove, Add, AddAttribute}

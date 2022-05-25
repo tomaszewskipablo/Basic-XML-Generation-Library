@@ -18,6 +18,7 @@ interface GUIEvent{
     fun addAttribute()
     fun renameEntity(entity: Entity, newName:String)
     fun renameEntity()
+    fun addEntity(newEntityName:String, parentEntity: Entity)
 }
 
 
@@ -44,9 +45,8 @@ class ConcreteEntityComponent(var text: String,var insideTextField:String = "") 
     }
 }
 
-class ComponentSkeleton(var entity: Entity) : JPanel(), IObservable<GUIEvent> {
+class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel(), IObservable<GUIEvent> {
     override val observers: MutableList<GUIEvent> = mutableListOf<GUIEvent>()
-    val controller = Controller()
     var nameEntity = entity.name
 
     override fun paintComponent(g: Graphics) {
@@ -67,15 +67,22 @@ class ComponentSkeleton(var entity: Entity) : JPanel(), IObservable<GUIEvent> {
         addObserver(controller)
     }
 
+    // Update View
     fun handleThisEvent(typeEvent: TypeEvent, value: String?, name: String?, child: Entity?){
         // switch case (event type)
         if(typeEvent == TypeEvent.Rename) {
-            //val s = components.find { it is Entity && name == it.name } as AttributeComponent
-            //jText.text = value
             nameEntity = value!!
         }
-        if(typeEvent == TypeEvent.Add) {
+        else if(typeEvent == TypeEvent.Add) {
+            add(ComponentSkeleton(child!!,controller))
+        }
 
+        else if(typeEvent == TypeEvent.Remove) {
+
+        }
+        else if(typeEvent == TypeEvent.AddAttribute) {
+            //val s = components.find { it is Entity && name == it.name } as AttributeComponent
+            //jText.text = value
         }
         revalidate()
         repaint()
@@ -91,7 +98,11 @@ class ComponentSkeleton(var entity: Entity) : JPanel(), IObservable<GUIEvent> {
         val a = JMenuItem("Add Tag")
         a.addActionListener {
             val text = JOptionPane.showInputDialog("Tag name")
-            add(ComponentSkeleton(Entity(text,entity)))
+
+
+            notifyObservers{
+                it.addEntity(text, entity)
+            }
             revalidate()
         }
         popupmenu.add(a)
@@ -100,6 +111,8 @@ class ComponentSkeleton(var entity: Entity) : JPanel(), IObservable<GUIEvent> {
         b.addActionListener {
             val text = JOptionPane.showInputDialog("attribute name")
             add(AttributeComponent(text))
+
+
             //EntityConcrete(text, text, entity)
             this.entity!!.attributes[text] = ""
             revalidate()
@@ -118,14 +131,13 @@ class ComponentSkeleton(var entity: Entity) : JPanel(), IObservable<GUIEvent> {
         val c = JMenuItem("Rename")
         c.addActionListener {
             val text = JOptionPane.showInputDialog("Rename")
-            // it workes, but we just update model, which is not good
+            // it works, but we just update model, which is not good
             //entity.name = text
 
             // notify controler, not model!!!
             notifyObservers{
                 it.renameEntity(entity,text)
             }
-            repaint()
         }
         popupmenu.add(c)
 
@@ -155,33 +167,36 @@ class ComponentSkeleton(var entity: Entity) : JPanel(), IObservable<GUIEvent> {
 }
 
 class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
-    lateinit var componentSkeleton : ComponentSkeleton
+    lateinit var componentSkeleton: ComponentSkeleton
 
     var jScrollPane = JScrollPane()
+
     //val undoStack = UndoStack()
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(700, 1000)
         layout = BorderLayout()
+        jScrollPane.viewport.add(ComponentSkeleton(root!!, Controller()))
         add(jScrollPane)
 
         var serializeButton = JButton("Serialize")
-        serializeButton.setBounds(0,230,50,20)
+        serializeButton.setBounds(0, 230, 50, 20)
         serializeButton.addActionListener {
-            println(root!!.serialization()) }
+            println(root!!.serialization())
+        }
 
         var loadButton = JButton("Load")
         loadButton.addActionListener {
-            val b = Book("ToPOWINNOBYC","WSORKU BOOK")
-            val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
-            createXMLObject(s1)
+            val b = Book("ToPOWINNOBYC", "WSORKU BOOK")
+            val s1 = Student(7, b, "Cristiano", "Ronaldo", StudentType.Doctoral)
+            //createXMLObject(s1)
         }
 
         var createRootElementButton = JButton("Create new root")
         createRootElementButton.addActionListener {
             val text = JOptionPane.showInputDialog("text")
             root = Entity(text, null)
-            componentSkeleton = ComponentSkeleton(root!!)
+            //componentSkeleton = ComponentSkeleton(root!!,)
             jScrollPane.viewport.add(componentSkeleton)
             repaint()
         }
@@ -189,13 +204,13 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
         add(loadButton, BorderLayout.SOUTH)
         add(serializeButton, BorderLayout.NORTH)
 
-        }
+    }
 
     fun open() {
         isVisible = true
     }
 
-    fun createXMLObject(o: Any, parentComponentSkeleton: ComponentSkeleton?=null){
+    /*fun createXMLObject(o: Any, parentComponentSkeleton: ComponentSkeleton?=null){
 
         val obj = o::class
         if(parentComponentSkeleton == null) {
@@ -267,8 +282,8 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
                     }
                 }
             }
-        }
-    }
+        }*/
+    //}
 
     private fun tableName(c: KClass<*>) =
         if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
@@ -296,7 +311,7 @@ fun main() {
     var xml = Xml("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>")
     var root = Entity("rootsad",null)
 
-    val w = WindowSkeleton()
+    val w = WindowSkeleton(root)
 
     val b = Book("title","JK ROwling")
     val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)

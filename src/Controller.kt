@@ -11,4 +11,9 @@ class Controller() : GUIEvent{
         TODO("Not yet implemented")
     }
 
+    override fun addEntity(newEntityName:String, parentEntity: Entity){
+        val e = Entity(newEntityName,parentEntity)
+        //parentEntity.children.add(entity)
+        parentEntity.addEntity(e)
+    }
 }
