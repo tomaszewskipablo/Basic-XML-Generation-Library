@@ -1,3 +1,5 @@
+import com.sun.xml.internal.ws.api.ha.StickyFeature
+import jdk.jfr.EventType
 import java.awt.*
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
@@ -11,15 +13,22 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 
+// any event UI can do
+interface GUIEvent{
+    fun addAttribute()
+    fun renameEntity(entity: Entity, newName:String)
+    fun renameEntity()
+}
+
 
 class AttributeComponent(var nameAttribute: String, var insideTextField:String = "") : JPanel() {
-
+    val jText = JTextField(insideTextField)
     init {
         layout = GridLayout(1, 2)
 
         setMaximumSize(Dimension(50, 15) )
         add(JLabel(nameAttribute))
-        add(JTextField(insideTextField))
+        add(jText)
     }
 }
 
@@ -35,11 +44,15 @@ class ConcreteEntityComponent(var text: String,var insideTextField:String = "") 
     }
 }
 
-class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() {
+class ComponentSkeleton(var entity: Entity) : JPanel(), IObservable<GUIEvent> {
+    override val observers: MutableList<GUIEvent> = mutableListOf<GUIEvent>()
+    val controller = Controller()
+    var nameEntity = entity.name
+
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
         g.font = Font("Arial", Font.BOLD, 16)
-        g.drawString(text, 10, 20)
+        g.drawString(nameEntity, 10, 20)
     }
 
     init {
@@ -49,6 +62,23 @@ class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() 
             BorderFactory.createLineBorder(Color.BLACK, 2, true)
         )
         createPopupMenu()
+
+        entity.addObserver {Event, value, name, entity -> handleThisEvent(Event, value, name, entity) }
+        addObserver(controller)
+    }
+
+    fun handleThisEvent(typeEvent: TypeEvent, value: String?, name: String?, child: Entity?){
+        // switch case (event type)
+        if(typeEvent == TypeEvent.Rename) {
+            //val s = components.find { it is Entity && name == it.name } as AttributeComponent
+            //jText.text = value
+            nameEntity = value!!
+        }
+        if(typeEvent == TypeEvent.Add) {
+
+        }
+        revalidate()
+        repaint()
     }
 
     fun removeChild(componentToBeRemoved: ComponentSkeleton){
@@ -61,7 +91,7 @@ class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() 
         val a = JMenuItem("Add Tag")
         a.addActionListener {
             val text = JOptionPane.showInputDialog("Tag name")
-            add(ComponentSkeleton(text, Entity(text,entity)))
+            add(ComponentSkeleton(Entity(text,entity)))
             revalidate()
         }
         popupmenu.add(a)
@@ -88,8 +118,13 @@ class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() 
         val c = JMenuItem("Rename")
         c.addActionListener {
             val text = JOptionPane.showInputDialog("Rename")
-            this.text = text
-            this.entity!!.name = text
+            // it workes, but we just update model, which is not good
+            //entity.name = text
+
+            // notify controler, not model!!!
+            notifyObservers{
+                it.renameEntity(entity,text)
+            }
             repaint()
         }
         popupmenu.add(c)
@@ -97,9 +132,9 @@ class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() 
         val d = JMenuItem("delete")
         d.addActionListener {
             if(JOptionPane.showConfirmDialog(null,"Are you sure?") == 0) {
-                    if(this.entity!!.parent == null){ //ROOT TO be removed
-                        val c = this.parent.parent.parent as JScrollPane
-                        c.viewport.remove(this)
+                    if(this.entity!!.parent == null){ //ROOT TO be removed TODO
+                       /* val c = this.parent.parent.parent as JScrollPane
+                        c.viewport.remove(this)*/
                     }
                 else {
                         this.entity!!.parent!!.children.remove(this.entity)
@@ -120,8 +155,10 @@ class ComponentSkeleton(var text: String,var entity: Entity? = null) : JPanel() 
 }
 
 class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
-    var componentSkeleton = ComponentSkeleton("")
+    lateinit var componentSkeleton : ComponentSkeleton
+
     var jScrollPane = JScrollPane()
+    //val undoStack = UndoStack()
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(700, 1000)
@@ -144,7 +181,7 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
         createRootElementButton.addActionListener {
             val text = JOptionPane.showInputDialog("text")
             root = Entity(text, null)
-            componentSkeleton = ComponentSkeleton(text,root)
+            componentSkeleton = ComponentSkeleton(root!!)
             jScrollPane.viewport.add(componentSkeleton)
             repaint()
         }
@@ -163,7 +200,7 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
         val obj = o::class
         if(parentComponentSkeleton == null) {
             root = Entity(tableName(obj).toString(), null)
-            componentSkeleton = ComponentSkeleton(tableName(obj).toString(),root)
+            componentSkeleton = ComponentSkeleton(root!!)
             jScrollPane.viewport.add(componentSkeleton)
             repaint()
             createXMLObject(o, componentSkeleton)
@@ -176,7 +213,7 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
                         if(innerText(it,o)) {
                             var listName = it.name
                             val e = Entity(it.name, parentComponentSkeleton.entity)
-                            val listElement = ComponentSkeleton(it.name, e)
+                            val listElement = ComponentSkeleton(e)
                             parentComponentSkeleton.add(listElement)
                             val coll = it.call(o) as Collection<*>
                             coll.forEach {
@@ -210,7 +247,7 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
                     {
                         var e = Entity(it.name,parentComponentSkeleton.entity)
 
-                        var newComponent = ComponentSkeleton(it.name, e)
+                        var newComponent = ComponentSkeleton(e)
                         parentComponentSkeleton.add(newComponent)
                         createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), newComponent)
                         revalidate()
@@ -257,7 +294,8 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
 
 fun main() {
     var xml = Xml("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>")
-    //var root = Entity("rootsad",null)
+    var root = Entity("rootsad",null)
+
     val w = WindowSkeleton()
 
     val b = Book("title","JK ROwling")
