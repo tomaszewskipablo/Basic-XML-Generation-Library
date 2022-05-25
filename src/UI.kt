@@ -15,19 +15,20 @@ import kotlin.reflect.full.isSubclassOf
 
 // any event UI can do
 interface GUIEvent{
-    fun addAttribute()
     fun renameEntity(entity: Entity, newName:String)
-    fun renameEntity()
     fun addEntity(newEntityName:String, parentEntity: Entity)
+    fun addAttribute(entity: Entity, newEntityName:String)
+    fun removeAttribute(entity: Entity, removeAttribute: String)
 }
 
 
 class AttributeComponent(var nameAttribute: String, var insideTextField:String = "") : JPanel() {
     val jText = JTextField(insideTextField)
+
     init {
         layout = GridLayout(1, 2)
 
-        setMaximumSize(Dimension(50, 15) )
+        setMaximumSize(Dimension(50, 15))
         add(JLabel(nameAttribute))
         add(jText)
     }
@@ -70,19 +71,26 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
     // Update View
     fun handleThisEvent(typeEvent: TypeEvent, value: String?, name: String?, child: Entity?){
         // switch case (event type)
-        if(typeEvent == TypeEvent.Rename) {
+        if(typeEvent == TypeEvent.RenameEntity) {
             nameEntity = value!!
         }
-        else if(typeEvent == TypeEvent.Add) {
+        else if(typeEvent == TypeEvent.AddEntity) {
             add(ComponentSkeleton(child!!,controller))
         }
 
-        else if(typeEvent == TypeEvent.Remove) {
+        else if(typeEvent == TypeEvent.RemoveEntity) {
 
         }
         else if(typeEvent == TypeEvent.AddAttribute) {
+            add(AttributeComponent(name!!,"value"))
+
             //val s = components.find { it is Entity && name == it.name } as AttributeComponent
             //jText.text = value
+        }
+        else if(typeEvent == TypeEvent.RemoveAttribute) {
+            val s = components.find { it is Component && name == it.name } as AttributeComponent
+            remove(s)
+            //s.jText.text = value
         }
         revalidate()
         repaint()
@@ -110,11 +118,15 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         val b = JMenuItem("Add attribute")
         b.addActionListener {
             val text = JOptionPane.showInputDialog("attribute name")
-            add(AttributeComponent(text))
+            //add(AttributeComponent(text))
 
 
             //EntityConcrete(text, text, entity)
-            this.entity!!.attributes[text] = ""
+            //this.entity!!.attributes[text] = ""
+
+            notifyObservers{
+                it.addAttribute(entity,text)
+            }
             revalidate()
         }
         popupmenu.add(b)

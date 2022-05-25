@@ -25,21 +25,34 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     fun rename(nameNew: String){
         name = nameNew
         notifyObservers {
-            it(TypeEvent.Rename, name, nameNew,null)
+            it(TypeEvent.RenameEntity, name, nameNew,null)
         }
     }
 
     fun addEntity(entity: Entity){
         notifyObservers {
-            it(TypeEvent.Add, "","", entity)
+            it(TypeEvent.AddEntity, "","", entity)
         }
     }
+
+    fun addAttribute(attributeName:String){
+        notifyObservers {
+            it(TypeEvent.AddAttribute, attributeName,"", null)
+        }
+    }
+
+    fun removeAtttribute(attributeName:String){
+        notifyObservers {
+            it(TypeEvent.RemoveAttribute, attributeName,"", null)
+        }
+    }
+
 
     override var name: String = name
         set(value) {
             field=value
             notifyObservers {
-                it(TypeEvent.Rename, "", name, null)
+                it(TypeEvent.RemoveEntity, "", name, null)
             }
         }
 
@@ -133,4 +146,4 @@ interface IObservable<O> {
 
 typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, entity: Entity?) -> Unit
 
-enum class TypeEvent {Rename,Remove, Add, AddAttribute}
+enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, AddSection, RemoveAttribute}
