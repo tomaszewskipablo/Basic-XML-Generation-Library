@@ -69,7 +69,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
     }
 
     // Update View
-    fun handleThisEvent(typeEvent: TypeEvent, value: String?, name: String?, child: Entity?){
+    fun handleThisEvent(typeEvent: TypeEvent, name: String?, value: String?, child: Entity?){
         // switch case (event type)
         if(typeEvent == TypeEvent.RenameEntity) {
             nameEntity = value!!
@@ -82,13 +82,13 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
 
         }
         else if(typeEvent == TypeEvent.AddAttribute) {
-            add(AttributeComponent(name!!,"value"))
+            add(AttributeComponent(name!!,value!!))
 
             //val s = components.find { it is Entity && name == it.name } as AttributeComponent
             //jText.text = value
         }
         else if(typeEvent == TypeEvent.RemoveAttribute) {
-            val s = components.find { it is Component && name == it.name } as AttributeComponent
+            val s = components.find { it is AttributeComponent && name == it.nameAttribute } as AttributeComponent
             remove(s)
             //s.jText.text = value
         }
@@ -130,6 +130,23 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             revalidate()
         }
         popupmenu.add(b)
+
+        val r = JMenuItem("Remove attribute")
+        r.addActionListener {
+            val text = JOptionPane.showInputDialog("attribute name to be removed")
+            //add(AttributeComponent(text))
+
+
+            //EntityConcrete(text, text, entity)
+            //this.entity!!.attributes[text] = ""
+
+            notifyObservers{
+                it.removeAttribute(entity,text)
+            }
+            revalidate()
+        }
+        popupmenu.add(r)
+
 
         val en = JMenuItem("Add section")
         en.addActionListener {

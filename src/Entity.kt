@@ -42,6 +42,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     }
 
     fun removeAtttribute(attributeName:String){
+        println(attributeName)
         notifyObservers {
             it(TypeEvent.RemoveAttribute, attributeName,"", null)
         }
