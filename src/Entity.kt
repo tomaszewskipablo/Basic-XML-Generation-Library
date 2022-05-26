@@ -29,31 +29,65 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         }
     }
 
-    fun addEntity(entity: Entity){
-        notifyObservers {
-            it(TypeEvent.AddEntity, "","", entity)
-        }
-    }
-
     fun addAttribute(attributeName:String){
+        attributes[attributeName] = ""
         notifyObservers {
             it(TypeEvent.AddAttribute, attributeName,"", null)
         }
     }
 
     fun removeAtttribute(attributeName:String){
-        println(attributeName)
+        attributes.remove(attributeName)
         notifyObservers {
             it(TypeEvent.RemoveAttribute, attributeName,"", null)
         }
     }
 
     fun removeEntity(entity: Entity, removeEntity:String){
-        val toBeRemoved = entity.children.find { it.name == removeEntity }
+        val toBeRemoved = children.find { it.name == removeEntity }
         if(toBeRemoved != null)
             children.remove(toBeRemoved)
         notifyObservers {
             it(TypeEvent.RemoveEntity, removeEntity,"", entity)
+        }
+    }
+
+    fun addEntity(entity: Entity){
+        notifyObservers {
+            it(TypeEvent.AddEntity, "","", entity)
+        }
+    }
+
+    fun addSection(sectionName: String){
+        val n = EntityConcrete(sectionName, "", this)
+        //  children.add(n)
+        notifyObservers {
+            it(TypeEvent.AddSection, sectionName,"", null)
+        }
+    }
+
+    fun removeSection(sectionName: String){
+        notifyObservers {
+            it(TypeEvent.RemoveSection, sectionName,"", null)
+        }
+    }
+
+    fun changeAttributeText(name: String, insideText: String){
+        attributes[name] = insideText
+    }
+
+    fun changeSectionText(name: String, insideText: String){
+
+    }
+
+    fun renameAttribute(name: String, nameNew:String){
+        val value = attributes[name]
+        println(attributes.toString())
+        attributes.remove(name)
+        println(attributes.toString())
+        attributes[nameNew] = value!!
+        notifyObservers {
+            it(TypeEvent.RenameAttribute, name,nameNew, null)
         }
     }
 
@@ -156,4 +190,4 @@ interface IObservable<O> {
 
 typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, entity: Entity?) -> Unit
 
-enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, AddSection, RemoveAttribute}
+enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, RemoveAttribute, RenameAttribute, AddSection,RemoveSection}

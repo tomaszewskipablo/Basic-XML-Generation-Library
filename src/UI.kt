@@ -1,6 +1,9 @@
 import com.sun.xml.internal.ws.api.ha.StickyFeature
 import jdk.jfr.EventType
 import java.awt.*
+import java.awt.SystemColor.text
+import java.awt.event.KeyEvent
+import java.awt.event.KeyListener
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.*
@@ -17,23 +20,18 @@ import kotlin.reflect.full.isSubclassOf
 interface GUIEvent{
     fun renameEntity(entity: Entity, newName:String)
     fun addEntity(newEntityName:String, parentEntity: Entity)
+    fun deleteEntity(entity: Entity, removeEntity:String)
     fun addAttribute(entity: Entity, newEntityName:String)
     fun removeAttribute(entity: Entity, removeAttribute: String)
-    fun deleteEntity(entity: Entity, removeEntity:String)
+    fun renameAttribute(entity: Entity, name: String, nameNew:String)
+    fun changeAttributeText(entity: Entity, name:String, nameNew:String)
+    fun addSection(entity: Entity, sectionName:String)
+    fun removeSection(entity: Entity, sectionName:String)
+
 }
 
 
-class AttributeComponent(var nameAttribute: String, var insideTextField:String = "") : JPanel() {
-    val jText = JTextField(insideTextField)
 
-    init {
-        layout = GridLayout(1, 2)
-
-        setMaximumSize(Dimension(50, 15))
-        add(JLabel(nameAttribute))
-        add(jText)
-    }
-}
 
 class ConcreteEntityComponent(var text: String,var insideTextField:String = "") : JPanel() {
 
@@ -65,13 +63,13 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         )
         createPopupMenu()
 
+
         entity.addObserver {Event, value, name, entity -> handleThisEvent(Event, value, name, entity) }
         addObserver(controller)
     }
 
     // Update View
     fun handleThisEvent(typeEvent: TypeEvent, name: String?, value: String?, child: Entity?){
-        // switch case (event type)
         if(typeEvent == TypeEvent.RenameEntity) {
             nameEntity = value!!
         }
@@ -92,6 +90,23 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             if(toBeRemoved != null)
                 remove(toBeRemoved as AttributeComponent)
             //s.jText.text = value
+        }
+        else if(typeEvent == TypeEvent.AddSection) {
+            add(ConcreteEntityComponent(name!!,value!!))
+        }
+        else if(typeEvent == TypeEvent.RemoveSection) { // TODO
+            val toBeRemoved = components.find { it is ConcreteEntityComponent && name == it.text }
+            if(toBeRemoved != null)
+                remove(toBeRemoved as ConcreteEntityComponent)
+            //s.jText.text = value
+        }
+        else if(typeEvent == TypeEvent.RenameAttribute) {
+            val element = components.find { it is AttributeComponent && name == it.nameAttribute }
+            if(element != null) {
+                val attributeElement = element as AttributeComponent
+                attributeElement.nameAttribute = value!!
+                attributeElement.jLabel.text = value
+            }
         }
         revalidate()
         repaint()
@@ -116,48 +131,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         }
         popupmenu.add(a)
 
-        val b = JMenuItem("Add attribute")
-        b.addActionListener {
-            val text = JOptionPane.showInputDialog("attribute name")
-            //add(AttributeComponent(text))
-
-
-            //EntityConcrete(text, text, entity)
-            //this.entity!!.attributes[text] = ""
-
-            notifyObservers{
-                it.addAttribute(entity,text)
-            }
-            revalidate()
-        }
-        popupmenu.add(b)
-
-        val r = JMenuItem("Remove attribute")
-        r.addActionListener {
-            val text = JOptionPane.showInputDialog("attribute name to be removed")
-            //add(AttributeComponent(text))
-
-
-            //EntityConcrete(text, text, entity)
-            //this.entity!!.attributes[text] = ""
-
-            notifyObservers{
-                it.removeAttribute(entity,text)
-            }
-        }
-        popupmenu.add(r)
-
-
-        val en = JMenuItem("Add section")
-        en.addActionListener {
-            val text = JOptionPane.showInputDialog("attribute name")
-            add(ConcreteEntityComponent(text))
-            EntityConcrete(text, text, entity)
-            revalidate()
-        }
-        popupmenu.add(en)
-
-        val c = JMenuItem("Rename")
+        val c = JMenuItem("Rename Tag")
         c.addActionListener {
             val text = JOptionPane.showInputDialog("Rename")
             // it works, but we just update model, which is not good
@@ -170,7 +144,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         }
         popupmenu.add(c)
 
-        val deleteEntityButton = JMenuItem("delete Entity")
+        val deleteEntityButton = JMenuItem("Remove Tag")
         deleteEntityButton.addActionListener {
             val text = JOptionPane.showInputDialog("entity name to be removed")
             notifyObservers{
@@ -179,12 +153,91 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         }
         popupmenu.add(deleteEntityButton)
 
+        val b = JMenuItem("Add attribute")
+        b.addActionListener {
+            val text = JOptionPane.showInputDialog("attribute name")
+            notifyObservers{
+                it.addAttribute(entity,text)
+            }
+            revalidate()
+        }
+        popupmenu.add(b)
+
+        val r = JMenuItem("Remove attribute")
+        r.addActionListener {
+            val text = JOptionPane.showInputDialog("attribute name to be removed")
+            notifyObservers{
+                it.removeAttribute(entity,text)
+            }
+        }
+        popupmenu.add(r)
+
+        val renameAttributeButton = JMenuItem("Rename attribute")
+        renameAttributeButton.addActionListener {
+            val attributeName = JOptionPane.showInputDialog("Which attribute should be renamed?")
+            if(entity.attributes[attributeName] != null) {
+                val newName = JOptionPane.showInputDialog("Which attribute should be renamed?")
+                notifyObservers {
+                    it.renameAttribute(entity, attributeName, newName)
+                }
+            }
+        }
+        popupmenu.add(renameAttributeButton)
+
+
+        val en = JMenuItem("Add section")
+        en.addActionListener {
+            val text = JOptionPane.showInputDialog("Section name")
+            notifyObservers{
+                it.addSection(entity,text)
+            }
+            revalidate()
+        }
+        popupmenu.add(en)
+
+        val removeSectionButton = JMenuItem("Remove section")
+        removeSectionButton.addActionListener {
+            val text = JOptionPane.showInputDialog("Section name")
+            notifyObservers{
+                it.removeSection(entity,text)
+            }
+            revalidate()
+        }
+        popupmenu.add(removeSectionButton)
+
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
                 if (SwingUtilities.isRightMouseButton(e))
                     popupmenu.show(this@ComponentSkeleton, e.x, e.y)
             }
         })
+    }
+
+    inner class AttributeComponent(var nameAttribute: String, var insideTextField:String = "") : JPanel() {
+        val jText = JTextField(insideTextField)
+        val jLabel = JLabel(nameAttribute)
+
+        init {
+            layout = GridLayout(1, 2)
+
+            setMaximumSize(Dimension(50, 15))
+            add(jLabel)
+            jText.addKeyListener(object: KeyListener{
+                override fun keyTyped(e: KeyEvent) {  }
+                override fun keyPressed(e: KeyEvent?) {
+                }
+
+                override fun keyReleased(e: KeyEvent?) {
+                    println("Released")
+                    notifyObservers{
+                        it.changeAttributeText(entity,nameAttribute,jText.text)
+                    }
+                }
+            })
+            add(jText)
+        }
+
+
     }
 }
 
