@@ -19,6 +19,7 @@ interface GUIEvent{
     fun addEntity(newEntityName:String, parentEntity: Entity)
     fun addAttribute(entity: Entity, newEntityName:String)
     fun removeAttribute(entity: Entity, removeAttribute: String)
+    fun deleteEntity(entity: Entity, removeEntity:String)
 }
 
 
@@ -79,17 +80,17 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         }
 
         else if(typeEvent == TypeEvent.RemoveEntity) {
-
+            val toBeRemoved = components.find { it is ComponentSkeleton && name == it.nameEntity}
+            if(toBeRemoved != null)
+                remove(toBeRemoved as ComponentSkeleton)
         }
         else if(typeEvent == TypeEvent.AddAttribute) {
             add(AttributeComponent(name!!,value!!))
-
-            //val s = components.find { it is Entity && name == it.name } as AttributeComponent
-            //jText.text = value
         }
         else if(typeEvent == TypeEvent.RemoveAttribute) {
-            val s = components.find { it is AttributeComponent && name == it.nameAttribute } as AttributeComponent
-            remove(s)
+            val toBeRemoved = components.find { it is AttributeComponent && name == it.nameAttribute }
+            if(toBeRemoved != null)
+                remove(toBeRemoved as AttributeComponent)
             //s.jText.text = value
         }
         revalidate()
@@ -143,7 +144,6 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             notifyObservers{
                 it.removeAttribute(entity,text)
             }
-            revalidate()
         }
         popupmenu.add(r)
 
@@ -170,21 +170,14 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         }
         popupmenu.add(c)
 
-        val d = JMenuItem("delete")
-        d.addActionListener {
-            if(JOptionPane.showConfirmDialog(null,"Are you sure?") == 0) {
-                    if(this.entity!!.parent == null){ //ROOT TO be removed TODO
-                       /* val c = this.parent.parent.parent as JScrollPane
-                        c.viewport.remove(this)*/
-                    }
-                else {
-                        this.entity!!.parent!!.children.remove(this.entity)
-                        val c = this.parent as ComponentSkeleton
-                        c.removeChild(this)
-                    }
+        val deleteEntityButton = JMenuItem("delete Entity")
+        deleteEntityButton.addActionListener {
+            val text = JOptionPane.showInputDialog("entity name to be removed")
+            notifyObservers{
+                it.deleteEntity(entity,text)
             }
         }
-        popupmenu.add(d)
+        popupmenu.add(deleteEntityButton)
 
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {

@@ -18,4 +18,7 @@ class Controller() : GUIEvent{
         entity.attributes.remove(attributeName)
         entity.removeAtttribute(attributeName)
     }
+    override fun deleteEntity(entity: Entity, removeEntity:String){
+        entity.removeEntity(entity, removeEntity)
+    }
 }

@@ -48,6 +48,15 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         }
     }
 
+    fun removeEntity(entity: Entity, removeEntity:String){
+        val toBeRemoved = entity.children.find { it.name == removeEntity }
+        if(toBeRemoved != null)
+            children.remove(toBeRemoved)
+        notifyObservers {
+            it(TypeEvent.RemoveEntity, removeEntity,"", entity)
+        }
+    }
+
 
     override var name: String = name
         set(value) {
