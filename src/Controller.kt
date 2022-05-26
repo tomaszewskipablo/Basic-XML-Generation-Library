@@ -9,6 +9,10 @@ class Controller() : GUIEvent{
         parentEntity.addEntity(e)
     }
 
+    override fun deleteEntity(entity: Entity, removeEntity:String){
+        entity.removeEntity(entity, removeEntity)
+    }
+
     override fun addAttribute(entity: Entity, attributeName:String){
         entity.addAttribute(attributeName)
     }
@@ -21,10 +25,6 @@ class Controller() : GUIEvent{
         entity.renameAttribute(name, newName)
     }
 
-    override fun deleteEntity(entity: Entity, removeEntity:String){
-        entity.removeEntity(entity, removeEntity)
-    }
-
     override fun addSection(entity: Entity, sectionName:String){
         entity.addSection(sectionName)
     }
@@ -33,7 +33,15 @@ class Controller() : GUIEvent{
         entity.removeSection(sectionName)
     }
 
+    override fun renameSection(entity: Entity, name:String, newName: String){
+        entity.renameSection(name, newName)
+    }
+
     override fun changeAttributeText(entity: Entity, name:String, insideText:String){
         entity.changeAttributeText(name, insideText)
+    }
+
+    override fun changeSectionText(entity: Entity, name:String, insideText:String){
+        entity.changeSectionText(name, insideText)
     }
 }

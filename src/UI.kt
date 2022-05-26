@@ -27,23 +27,12 @@ interface GUIEvent{
     fun changeAttributeText(entity: Entity, name:String, nameNew:String)
     fun addSection(entity: Entity, sectionName:String)
     fun removeSection(entity: Entity, sectionName:String)
-
+    fun renameSection(entity: Entity, name:String, newName: String)
+    fun changeSectionText(entity: Entity, name:String, insideText:String)
 }
 
 
 
-
-class ConcreteEntityComponent(var text: String,var insideTextField:String = "") : JPanel() {
-
-    init {
-        layout = BorderLayout()
-
-        setMaximumSize(Dimension(50, 15) )
-        name = text
-        add(JLabel(text),BorderLayout.NORTH)
-        add(JTextField(insideTextField),BorderLayout.CENTER)
-    }
-}
 
 class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel(), IObservable<GUIEvent> {
     override val observers: MutableList<GUIEvent> = mutableListOf<GUIEvent>()
@@ -105,6 +94,14 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             if(element != null) {
                 val attributeElement = element as AttributeComponent
                 attributeElement.nameAttribute = value!!
+                attributeElement.jLabel.text = value
+            }
+        }
+        else if(typeEvent == TypeEvent.RenameSection) {
+            val element = components.find { it is ConcreteEntityComponent && name == it.text }
+            if(element != null) {
+                val attributeElement = element as ConcreteEntityComponent
+                attributeElement.text = value!!
                 attributeElement.jLabel.text = value
             }
         }
@@ -176,7 +173,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         renameAttributeButton.addActionListener {
             val attributeName = JOptionPane.showInputDialog("Which attribute should be renamed?")
             if(entity.attributes[attributeName] != null) {
-                val newName = JOptionPane.showInputDialog("Which attribute should be renamed?")
+                val newName = JOptionPane.showInputDialog("New name")
                 notifyObservers {
                     it.renameAttribute(entity, attributeName, newName)
                 }
@@ -194,6 +191,22 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             revalidate()
         }
         popupmenu.add(en)
+
+        val renameSectionButton = JMenuItem("Rename section")
+        renameSectionButton.addActionListener {
+            val sectionName = JOptionPane.showInputDialog("Which section should be renamed?")
+            if(entity.children.find{it.name == sectionName} != null) {
+                val newName = JOptionPane.showInputDialog("New name")
+                notifyObservers {
+                    it.renameSection(entity, sectionName, newName)
+                }
+                notifyObservers{
+                    it.renameSection(entity, sectionName, newName)
+                }
+            }
+
+        }
+        popupmenu.add(renameSectionButton)
 
         val removeSectionButton = JMenuItem("Remove section")
         removeSectionButton.addActionListener {
@@ -228,7 +241,6 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
                 }
 
                 override fun keyReleased(e: KeyEvent?) {
-                    println("Released")
                     notifyObservers{
                         it.changeAttributeText(entity,nameAttribute,jText.text)
                     }
@@ -236,8 +248,30 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             })
             add(jText)
         }
+    }
 
+    inner class ConcreteEntityComponent(var text: String,var insideTextField:String = "") : JPanel() {
+        val jLabel = JLabel(text)
+        val jTextField = JTextField(insideTextField)
+        init {
+            layout = BorderLayout()
 
+            setMaximumSize(Dimension(50, 15) )
+            name = text
+            add(jLabel,BorderLayout.NORTH)
+            jTextField.addKeyListener(object: KeyListener{
+                override fun keyTyped(e: KeyEvent) {  }
+                override fun keyPressed(e: KeyEvent?) {
+                }
+
+                override fun keyReleased(e: KeyEvent?) {
+                    notifyObservers{
+                        it.changeSectionText(entity,name,jTextField.text)
+                    }
+                }
+            })
+            add(jTextField,BorderLayout.CENTER)
+        }
     }
 }
 

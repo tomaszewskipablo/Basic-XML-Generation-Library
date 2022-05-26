@@ -60,7 +60,6 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
 
     fun addSection(sectionName: String){
         val n = EntityConcrete(sectionName, "", this)
-        //  children.add(n)
         notifyObservers {
             it(TypeEvent.AddSection, sectionName,"", null)
         }
@@ -77,20 +76,32 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     }
 
     fun changeSectionText(name: String, insideText: String){
-
+        val element = children.find {  it.name == name } // it is ConcreteEntityComponent &&
+        if(element != null) {
+            val toBeChanged = element as EntityConcrete
+            toBeChanged.innerText = insideText
+        }
     }
 
     fun renameAttribute(name: String, nameNew:String){
         val value = attributes[name]
-        println(attributes.toString())
         attributes.remove(name)
-        println(attributes.toString())
         attributes[nameNew] = value!!
         notifyObservers {
             it(TypeEvent.RenameAttribute, name,nameNew, null)
         }
     }
 
+    fun renameSection(name: String, nameNew:String){
+        val element = children.find {  it.name == name } // it is ConcreteEntityComponent &&
+        if(element != null) {
+            val toBeRenamed = element as EntityConcrete
+        toBeRenamed!!.name = nameNew
+        notifyObservers {
+            it(TypeEvent.RenameSection, name, nameNew, null)
+        }
+        }
+    }
 
     override var name: String = name
         set(value) {
@@ -160,7 +171,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     }
 }
 
-class EntityConcrete(name: String, val innerText:String, parent: Entity? = null) : EntityAbstract(name, parent) {
+class EntityConcrete(name: String, var innerText:String, parent: Entity? = null) : EntityAbstract(name, parent) {
     override fun accept(v: Visitor) {
         v.visit(this)
         }
@@ -190,4 +201,4 @@ interface IObservable<O> {
 
 typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, entity: Entity?) -> Unit
 
-enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, RemoveAttribute, RenameAttribute, AddSection,RemoveSection}
+enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, RemoveAttribute, RenameAttribute, AddSection,RemoveSection, RenameSection}
