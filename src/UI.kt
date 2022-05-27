@@ -25,8 +25,8 @@ interface GUIEvent{
     fun removeAttribute(entity: Entity, removeAttribute: String)
     fun renameAttribute(entity: Entity, name: String, nameNew:String)
     fun changeAttributeText(entity: Entity, name:String, nameNew:String)
-    fun addSection(entity: Entity, sectionName:String)
-    fun removeSection(entity: Entity, sectionName:String)
+    fun addSection(entity: Entity, sectionName:String, insideText:String)
+    fun removeSection(entity: Entity, sectionName:String, insideText:String)
     fun renameSection(entity: Entity, name:String, newName: String)
     fun changeSectionText(entity: Entity, name:String, insideText:String)
 }
@@ -187,7 +187,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         en.addActionListener {
             val text = JOptionPane.showInputDialog("Section name")
             notifyObservers{
-                it.addSection(entity,text)
+                it.addSection(entity,text, "")
             }
             revalidate()
         }
@@ -212,10 +212,14 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         val removeSectionButton = JMenuItem("Remove section")
         removeSectionButton.addActionListener {
             val text = JOptionPane.showInputDialog("Section name")
-            notifyObservers{
-                it.removeSection(entity,text)
+            val element = entity.children.find{it.name == text}
+            if(element != null) {
+                val s = element as EntityConcrete
+                    notifyObservers {
+                        it.removeSection(entity, text, s.innerText)
+                    }
+                revalidate()
             }
-            revalidate()
         }
         popupmenu.add(removeSectionButton)
 

@@ -20,27 +20,27 @@ class Controller() : GUIEvent{
     }
 
     override fun addAttribute(entity: Entity, attributeName:String){
-        entity.addAttribute(attributeName)
+        execute(AddAttributeCommand(entity, attributeName))
     }
 
     override fun removeAttribute(entity: Entity, attributeName:String){
-        entity.removeAtttribute(attributeName)
+        execute(RemoveAttributeCommand(entity, attributeName))
     }
 
     override fun renameAttribute(entity: Entity, name:String, newName: String){
-        entity.renameAttribute(name, newName)
+        execute(RenameAttributeCommand(entity, name, newName))
     }
 
-    override fun addSection(entity: Entity, sectionName:String){
-        entity.addSection(sectionName)
+    override fun addSection(entity: Entity, sectionName:String, insideText:String){
+        execute(AddSectionCommand(entity,sectionName, insideText))
     }
 
-    override fun removeSection(entity: Entity, sectionName:String){
-        entity.removeSection(sectionName)
+    override fun removeSection(entity: Entity, sectionName:String, insideText:String){
+        execute(RemoveSectionCommand(entity,sectionName, insideText))
     }
 
     override fun renameSection(entity: Entity, name:String, newName: String){
-        entity.renameSection(name, newName)
+        execute(RenameSectionCommand(entity, name,newName))
     }
 
     override fun changeAttributeText(entity: Entity, name:String, insideText:String){

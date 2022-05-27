@@ -56,16 +56,21 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         }
     }
 
-    fun addSection(sectionName: String){
-        val n = EntityConcrete(sectionName, "", this)
+    fun addSection(sectionName: String, insideText: String){
+        val n = EntityConcrete(sectionName, insideText, this)
         notifyObservers {
-            it(TypeEvent.AddSection, sectionName,"", null)
+            it(TypeEvent.AddSection, sectionName,insideText, null)
         }
     }
 
-    fun removeSection(sectionName: String){
-        notifyObservers {
-            it(TypeEvent.RemoveSection, sectionName,"", null)
+    fun removeSection(sectionName: String, insideText: String){
+        val element = children.find {  it.name == sectionName } // it is ConcreteEntityComponent &&
+        if(element != null) {
+            val toBeRemoved = element as EntityConcrete
+            children.remove(toBeRemoved)
+            notifyObservers {
+                it(TypeEvent.RemoveSection, sectionName, element.innerText, null)
+            }
         }
     }
 
