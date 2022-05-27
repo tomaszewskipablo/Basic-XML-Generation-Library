@@ -142,24 +142,33 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         return concreteEntitiesList
     }
 
+    fun escapespecialCharacter(text: String):String{
+        return text
+            .replace("<", "&lt;")
+            .replace("&","&amp;")
+            .replace(">","&gt;")
+            .replace("\"","&quot;")
+            .replace("\'","&apos;")
+    }
+
     fun serialization() : String{
 
         var xmlText = ""
         accept(object : Visitor {
             var depth = 0
             override fun visit(e: EntityConcrete) {
-                xmlText += "\t".repeat(depth) + "<" + e.name + ">" + e.innerText + "</" + e.name + ">" + "\n"
+                xmlText += "\t".repeat(depth) + "<" + escapespecialCharacter(e.name) + ">" + escapespecialCharacter(e.innerText) + "</" + escapespecialCharacter(e.name) + ">" + "\n"
             }
 
             override fun visit(e: Entity): Boolean {
-                xmlText += "\t".repeat(depth) + "<" + e.name + wirteAttributes(e.attributes) +">" + "\n"
+                xmlText += "\t".repeat(depth) + "<" + escapespecialCharacter(e.name) + wirteAttributes(e.attributes) +">" + "\n"
                 depth++
                 return true
             }
 
             override fun endVisit(e: Entity) {
                 depth--
-                xmlText += "\t".repeat(depth) + "</" + e.name + ">" +"\n"
+                xmlText += "\t".repeat(depth) + "</" + escapespecialCharacter(e.name) + ">" +"\n"
             }
         })
         return xmlText
@@ -168,7 +177,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     fun wirteAttributes(att:HashMap<String, String>):String{
         var attributes = ""
         att.forEach(){
-            attributes += " " + it.key + "=\"" + it.value + "\""
+            attributes += " " + escapespecialCharacter(it.key) + "=\"" + escapespecialCharacter(it.value) + "\""
     }
         return attributes
     }

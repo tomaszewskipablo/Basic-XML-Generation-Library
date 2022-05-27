@@ -6,6 +6,7 @@ import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
+import java.io.PrintWriter
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 import kotlin.reflect.KClass
@@ -280,12 +281,12 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
     }
 }
 
-class WindowSkeleton(var root: Entity?=null, var controller: Controller) : JFrame("title") {
+class WindowSkeleton(var root: Entity?=null, var controller: Controller, val version:String,val codding:String, val standalone:String, var mode:WriteToMode) : JFrame("title") {
+    var xmlHeader = "<?xml version=\"$version\" encoding=\"$codding\" standalone=\"$standalone\" ?>"
     lateinit var componentSkeleton: ComponentSkeleton
 
     var jScrollPane = JScrollPane()
 
-    //
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(700, 1000)
@@ -296,7 +297,9 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller) : JFram
         var serializeButton = JButton("Serialize")
         serializeButton.setBounds(0, 230, 50, 20)
         serializeButton.addActionListener {
-            println(root!!.serialization())
+
+            writeTo(xmlHeader, root!!.serialization(), WriteToMode.File)
+
         }
 
         var loadButton = JButton("Load")
@@ -320,6 +323,20 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller) : JFram
         isVisible = true
     }
 
+    fun writeTo(xmlHeader:String, xml:String, mode: WriteToMode){
+        if(WriteToMode.File == mode) {
+            // using java class java.io.PrintWriter
+            val writer = PrintWriter("file.txt")
+            writer.append(xmlHeader)
+            writer.append('\n')
+            writer.append(xml)
+            writer.close()
+        }
+        else if(WriteToMode.Console == mode) {
+            println(xmlHeader)
+            println(xml)
+        }
+    }
     /*fun createXMLObject(o: Any, parentComponentSkeleton: ComponentSkeleton?=null){
 
         val obj = o::class
@@ -415,13 +432,12 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller) : JFram
     fun KClassifier?.isCollection() = this is KClass<*> && this.isSubclassOf(Collection::class)
 }
 
-
+enum class WriteToMode {File, Console}
 
 fun main() {
-    var xml = Xml("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>")
     var root = Entity("rootsad",null)
     var controller = Controller()
-    val w = WindowSkeleton(root, controller)
+    val w = WindowSkeleton(root, controller, "1.0","UTF-8", "no", WriteToMode.File)
 
     val b = Book("title","JK ROwling")
     val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
