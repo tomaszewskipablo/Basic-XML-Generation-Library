@@ -1,16 +1,24 @@
 class Controller() : GUIEvent{
+    val undoStack = UndoStack()
+    fun execute(c: Command) {
+        undoStack.execute(c)
+    }
     override fun renameEntity(entity: Entity, newName:String) {
         entity.rename(newName)
     }
 
     override fun addEntity(newEntityName:String, parentEntity: Entity){
         val e = Entity(newEntityName,parentEntity)
-        //parentEntity.children.add(entity)
-        parentEntity.addEntity(e)
+        //parentEntity.addEntity(e)
+        execute(AddCommand(parentEntity, e))
     }
 
     override fun deleteEntity(entity: Entity, removeEntity:String){
-        entity.removeEntity(entity, removeEntity)
+        val e = entity.children.find { it is Entity && it.name == removeEntity}
+        if(e != null) {
+            execute(RemoveCommand(entity, e as Entity))
+        }
+        //entity.removeEntity(removeEntity)
     }
 
     override fun addAttribute(entity: Entity, attributeName:String){

@@ -125,7 +125,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
                 it.addEntity(text, entity)
             }
             revalidate()
-        }
+            }
         popupmenu.add(a)
 
         val c = JMenuItem("Rename Tag")
@@ -145,6 +145,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         deleteEntityButton.addActionListener {
             val text = JOptionPane.showInputDialog("entity name to be removed")
             notifyObservers{
+
                 it.deleteEntity(entity,text)
             }
         }
@@ -275,17 +276,17 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
     }
 }
 
-class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
+class WindowSkeleton(var root: Entity?=null, var controller: Controller) : JFrame("title") {
     lateinit var componentSkeleton: ComponentSkeleton
 
     var jScrollPane = JScrollPane()
 
-    //val undoStack = UndoStack()
+    //
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(700, 1000)
         layout = BorderLayout()
-        jScrollPane.viewport.add(ComponentSkeleton(root!!, Controller()))
+        jScrollPane.viewport.add(ComponentSkeleton(root!!, controller))
         add(jScrollPane)
 
         var serializeButton = JButton("Serialize")
@@ -301,15 +302,11 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
             //createXMLObject(s1)
         }
 
-        var createRootElementButton = JButton("Create new root")
-        createRootElementButton.addActionListener {
-            val text = JOptionPane.showInputDialog("text")
-            root = Entity(text, null)
-            //componentSkeleton = ComponentSkeleton(root!!,)
-            jScrollPane.viewport.add(componentSkeleton)
-            repaint()
+        var undo = JButton("Undo")
+        undo.addActionListener {
+            controller.undoStack.undo()
         }
-        add(createRootElementButton, BorderLayout.WEST)
+        add(undo, BorderLayout.WEST)
         add(loadButton, BorderLayout.SOUTH)
         add(serializeButton, BorderLayout.NORTH)
 
@@ -419,8 +416,8 @@ class WindowSkeleton(var root: Entity?=null) : JFrame("title") {
 fun main() {
     var xml = Xml("<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>")
     var root = Entity("rootsad",null)
-
-    val w = WindowSkeleton(root)
+    var controller = Controller()
+    val w = WindowSkeleton(root, controller)
 
     val b = Book("title","JK ROwling")
     val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
