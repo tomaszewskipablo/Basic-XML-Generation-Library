@@ -4,12 +4,11 @@ class Controller() : GUIEvent{
         undoStack.execute(c)
     }
     override fun renameEntity(entity: Entity, newName:String) {
-        entity.rename(newName)
+        execute(RenameEntityCommand(entity, newName, entity.name))
     }
 
     override fun addEntity(newEntityName:String, parentEntity: Entity){
         val e = Entity(newEntityName,parentEntity)
-        //parentEntity.addEntity(e)
         execute(AddCommand(parentEntity, e))
     }
 
@@ -18,7 +17,6 @@ class Controller() : GUIEvent{
         if(e != null) {
             execute(RemoveCommand(entity, e as Entity))
         }
-        //entity.removeEntity(removeEntity)
     }
 
     override fun addAttribute(entity: Entity, attributeName:String){

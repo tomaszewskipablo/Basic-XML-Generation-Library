@@ -43,12 +43,10 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         }
     }
 
-    fun removeEntity(removeEntity:String){
-        val toBeRemoved = children.find { it.name == removeEntity }
-        if(toBeRemoved != null)
-            children.remove(toBeRemoved)
+    fun removeEntity(entity: Entity){
+            children.remove(entity)
         notifyObservers {
-            it(TypeEvent.RemoveEntity, removeEntity,"", null)
+            it(TypeEvent.RemoveEntity, entity.name,"", null)
         }
     }
 
