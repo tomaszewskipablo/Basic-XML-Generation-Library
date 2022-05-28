@@ -79,7 +79,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         else if(typeEvent == TypeEvent.AddSection) {
             add(ConcreteEntityComponent(name!!,value!!))
         }
-        else if(typeEvent == TypeEvent.RemoveSection) { // TODO
+        else if(typeEvent == TypeEvent.RemoveSection) {
             val toBeRemoved = components.find { it is ConcreteEntityComponent && name == it.text }
             if(toBeRemoved != null)
                 remove(toBeRemoved as ConcreteEntityComponent)
@@ -105,11 +105,6 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         repaint()
     }
 
-    fun removeChild(componentToBeRemoved: ComponentSkeleton){
-        this.remove(componentToBeRemoved)
-        repaint()
-    }
-
     private fun createPopupMenu() {
         val popupmenu = JPopupMenu("Actions")
         val a = JMenuItem("Add Tag")
@@ -124,19 +119,6 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             }
         popupmenu.add(a)
 
-        val c = JMenuItem("Rename Tag")
-        c.addActionListener {
-            val text = JOptionPane.showInputDialog("Rename")
-            // it works, but we just update model, which is not good
-            //entity.name = text
-
-            // notify controler, not model!!!
-            notifyObservers{
-                it.renameEntity(entity,text)
-            }
-        }
-        popupmenu.add(c)
-
         val deleteEntityButton = JMenuItem("Remove Tag")
         deleteEntityButton.addActionListener {
             val text = JOptionPane.showInputDialog("entity name to be removed")
@@ -147,6 +129,15 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         }
         popupmenu.add(deleteEntityButton)
 
+        val c = JMenuItem("Rename Tag")
+        c.addActionListener {
+            val text = JOptionPane.showInputDialog("Rename")
+            notifyObservers{
+                it.renameEntity(entity,text)
+            }
+        }
+        popupmenu.add(c)
+
         val b = JMenuItem("Add attribute")
         b.addActionListener {
             val text = JOptionPane.showInputDialog("attribute name")
@@ -156,6 +147,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             revalidate()
         }
         popupmenu.add(b)
+        b.background = Color.LIGHT_GRAY
 
         val r = JMenuItem("Remove attribute")
         r.addActionListener {
@@ -164,6 +156,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
                 it.removeAttribute(entity,text, "")
             }
         }
+        r.background = Color.LIGHT_GRAY
         popupmenu.add(r)
 
         val renameAttributeButton = JMenuItem("Rename attribute")
@@ -176,10 +169,11 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
                 }
             }
         }
+        renameAttributeButton.background = Color.LIGHT_GRAY
         popupmenu.add(renameAttributeButton)
 
-
         val en = JMenuItem("Add section")
+        en.background = Color.GRAY
         en.addActionListener {
             val text = JOptionPane.showInputDialog("Section name")
             notifyObservers{
@@ -189,7 +183,23 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         }
         popupmenu.add(en)
 
+        val removeSectionButton = JMenuItem("Remove section")
+        removeSectionButton.background = Color.GRAY
+        removeSectionButton.addActionListener {
+            val text = JOptionPane.showInputDialog("Section name")
+            val element = entity.children.find{it.name == text}
+            if(element != null) {
+                val s = element as EntityConcrete
+                notifyObservers {
+                    it.removeSection(entity, text, s.innerText)
+                }
+                revalidate()
+            }
+        }
+        popupmenu.add(removeSectionButton)
+
         val renameSectionButton = JMenuItem("Rename section")
+        renameSectionButton.background = Color.GRAY
         renameSectionButton.addActionListener {
             val sectionName = JOptionPane.showInputDialog("Which section should be renamed?")
             if(entity.children.find{it.name == sectionName} != null) {
@@ -197,27 +207,11 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
                 notifyObservers {
                     it.renameSection(entity, sectionName, newName)
                 }
-                notifyObservers{
-                    it.renameSection(entity, sectionName, newName)
-                }
             }
-
         }
         popupmenu.add(renameSectionButton)
 
-        val removeSectionButton = JMenuItem("Remove section")
-        removeSectionButton.addActionListener {
-            val text = JOptionPane.showInputDialog("Section name")
-            val element = entity.children.find{it.name == text}
-            if(element != null) {
-                val s = element as EntityConcrete
-                    notifyObservers {
-                        it.removeSection(entity, text, s.innerText)
-                    }
-                revalidate()
-            }
-        }
-        popupmenu.add(removeSectionButton)
+
 
         addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
