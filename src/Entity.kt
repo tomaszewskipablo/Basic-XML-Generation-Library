@@ -29,10 +29,10 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         }
     }
 
-    fun addAttribute(attributeName:String){
-        attributes[attributeName] = ""
+    fun addAttribute(attributeName:String, insideText:String ){
+        attributes[attributeName] = insideText
         notifyObservers {
-            it(TypeEvent.AddAttribute, attributeName,"", null)
+            it(TypeEvent.AddAttribute, attributeName,insideText, null)
         }
     }
 

@@ -10,7 +10,9 @@ data class Student(
     @XmlTagContent
     val type: StudentType? = null,
     @XmlTagContent
-    val lista: List<String> = listOf("Ajay","Vijay","Prakash")
+    val lista: List<String> = listOf("Ajay","Vijay","Prakash"),
+
+    val lista2: List<String> = listOf("Ajay","Vijay","Prakash")
 )
 
 @XmlName("BOOK")

@@ -20,10 +20,10 @@ import kotlin.reflect.full.isSubclassOf
 // any event UI can do
 interface GUIEvent{
     fun renameEntity(entity: Entity, newName:String)
-    fun addEntity(newEntityName:String, parentEntity: Entity)
+    fun addEntity(newEntityName:String, parentEntity: Entity): Entity
     fun deleteEntity(entity: Entity, removeEntity:String)
-    fun addAttribute(entity: Entity, newEntityName:String)
-    fun removeAttribute(entity: Entity, removeAttribute: String)
+    fun addAttribute(entity: Entity, newEntityName:String, insideText:String)
+    fun removeAttribute(entity: Entity, removeAttribute: String, insideText:String)
     fun renameAttribute(entity: Entity, name: String, nameNew:String)
     fun changeAttributeText(entity: Entity, name:String, nameNew:String)
     fun addSection(entity: Entity, sectionName:String, insideText:String)
@@ -156,7 +156,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         b.addActionListener {
             val text = JOptionPane.showInputDialog("attribute name")
             notifyObservers{
-                it.addAttribute(entity,text)
+                it.addAttribute(entity,text, "")
             }
             revalidate()
         }
@@ -166,7 +166,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         r.addActionListener {
             val text = JOptionPane.showInputDialog("attribute name to be removed")
             notifyObservers{
-                it.removeAttribute(entity,text)
+                it.removeAttribute(entity,text, "")
             }
         }
         popupmenu.add(r)
@@ -298,7 +298,7 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller, val ver
         serializeButton.setBounds(0, 230, 50, 20)
         serializeButton.addActionListener {
 
-            writeTo(xmlHeader, root!!.serialization(), WriteToMode.File)
+            writeTo(xmlHeader, root!!.serialization(), mode)
 
         }
 
@@ -306,7 +306,7 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller, val ver
         loadButton.addActionListener {
             val b = Book("ToPOWINNOBYC", "WSORKU BOOK")
             val s1 = Student(7, b, "Cristiano", "Ronaldo", StudentType.Doctoral)
-            //createXMLObject(s1)
+            createXMLObject(s1, root!!)
         }
 
         var undo = JButton("Undo")
@@ -337,80 +337,50 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller, val ver
             println(xml)
         }
     }
-    /*fun createXMLObject(o: Any, parentComponentSkeleton: ComponentSkeleton?=null){
 
+    private fun createXMLObject(o: Any, parentEntity: Entity) {
         val obj = o::class
-        if(parentComponentSkeleton == null) {
-            root = Entity(tableName(obj).toString(), null)
-            componentSkeleton = ComponentSkeleton(root!!)
-            jScrollPane.viewport.add(componentSkeleton)
-            repaint()
-            createXMLObject(o, componentSkeleton)
-        }
-        else {
+        if (parentEntity.name != tableName(obj)) {
+            //controller.clearStack()
+            controller.execute(RenameEntityCommand(parentEntity, tableName(obj).toString(), parentEntity.name))
+            createXMLObject(o, parentEntity)
+        } else {
             obj.declaredMemberProperties.forEach {
                 if (!Ignore(it)) {
-                    if (it.returnType.classifier.isCollection())
-                    {
-                        if(innerText(it,o)) {
+                    if (it.returnType.classifier.isCollection()) {
+                        if (innerText(it, o)) {
                             var listName = it.name
-                            val e = Entity(it.name, parentComponentSkeleton.entity)
-                            val listElement = ComponentSkeleton(e)
-                            parentComponentSkeleton.add(listElement)
+                            val listEntity = controller.addEntity(listName, parentEntity) // QUESTION is it ok to return value by controller?
                             val coll = it.call(o) as Collection<*>
                             coll.forEach {
-                                if (it != null){
-                                    listElement.add(ConcreteEntityComponent(listName, it.toString()))
-                                    EntityConcrete(listName, it.toString(), listElement.entity)
-                                    revalidate()
-
+                                if (it != null) {
+                                    controller.execute(AddSectionCommand(listEntity,listName,it.toString()))
                                 }
                             }
-                        }
-                        else{
+                        } else {
                             val coll = it.call(o) as Collection<*>
-                            parentComponentSkeleton.entity!!.attributes[it.name] = it.call(o).toString()
-                            parentComponentSkeleton!!.add(AttributeComponent(it.name,coll.toString()))
+                            controller.execute(AddAttributeCommand(parentEntity,fieldName(it),it.call(o).toString()))
                         }
-                    } else if (it.returnType.classifier.isEnum())
-                    {
-                        if(innerText(it,o)) {
-                            parentComponentSkeleton.add(ConcreteEntityComponent(fieldName(it),it.call(o).toString()))
-                            parentComponentSkeleton.entity!!.attributes[it.name] = it.call(o).toString()
-                            revalidate()
+                    } else if (it.returnType.classifier.isEnum()) {
+                        if (innerText(it, o)) {
+                            controller.execute(AddAttributeCommand(parentEntity,fieldName(it),it.call(o).toString()))
+                        } else {
+                            controller.execute(AddSectionCommand(parentEntity,fieldName(it),it.call(o).toString()))
                         }
-                        else{
-                            parentComponentSkeleton.add(ConcreteEntityComponent(it.name,it.call(o).toString()))
-                            EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
-                            revalidate()
-                        }
-                    }
-                    else if(it.call(o)!!::class.isData)
-                    {
-                        var e = Entity(it.name,parentComponentSkeleton.entity)
-
-                        var newComponent = ComponentSkeleton(e)
-                        parentComponentSkeleton.add(newComponent)
-                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), newComponent)
-                        revalidate()
-                    }
-                    else
-                    {
-                        if(innerText(it,o)) {
-                            parentComponentSkeleton.entity!!.attributes[it.name] = it.call(o).toString()
-                            parentComponentSkeleton!!.add(AttributeComponent(fieldName(it),it.call(o).toString()))
-                            revalidate()
-                        }
-                        else{
-                            parentComponentSkeleton.add(ConcreteEntityComponent(fieldName(it), it.call(o).toString()))
-                            EntityConcrete(fieldName(it), it.call(o).toString(), parentComponentSkeleton.entity)
-                            revalidate()
+                    } else if (it.call(o)!!::class.isData) {
+                        val dataClassEntity = controller.addEntity(it.name, parentEntity)
+                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), dataClassEntity)
+                    } else {
+                        if (innerText(it, o)) {
+                            controller.execute(AddSectionCommand(parentEntity,it.name,it.call(o).toString()))
+                        } else {
+                            controller.execute(AddAttributeCommand(parentEntity,it.name,it.call(o).toString())) // it.call(o).toString()
                         }
                     }
                 }
             }
-        }*/
-    //}
+        }
+    }
 
     private fun tableName(c: KClass<*>) =
         if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
@@ -435,9 +405,9 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller, val ver
 enum class WriteToMode {File, Console}
 
 fun main() {
-    var root = Entity("rootsad",null)
+    var root = Entity("default name",null)
     var controller = Controller()
-    val w = WindowSkeleton(root, controller, "1.0","UTF-8", "no", WriteToMode.File)
+    val w = WindowSkeleton(root, controller, "1.0","UTF-8", "no", WriteToMode.Console)
 
     val b = Book("title","JK ROwling")
     val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)

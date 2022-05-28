@@ -7,9 +7,10 @@ class Controller() : GUIEvent{
         execute(RenameEntityCommand(entity, newName, entity.name))
     }
 
-    override fun addEntity(newEntityName:String, parentEntity: Entity){
+    override fun addEntity(newEntityName:String, parentEntity: Entity): Entity{
         val e = Entity(newEntityName,parentEntity)
         execute(AddCommand(parentEntity, e))
+        return e
     }
 
     override fun deleteEntity(entity: Entity, removeEntity:String){
@@ -19,12 +20,12 @@ class Controller() : GUIEvent{
         }
     }
 
-    override fun addAttribute(entity: Entity, attributeName:String){
-        execute(AddAttributeCommand(entity, attributeName))
+    override fun removeAttribute(entity: Entity, attributeName:String, insideText:String){
+        execute(RemoveAttributeCommand(entity, attributeName, insideText))
     }
 
-    override fun removeAttribute(entity: Entity, attributeName:String){
-        execute(RemoveAttributeCommand(entity, attributeName))
+    override fun addAttribute(entity: Entity, attributeName:String, insideText:String){
+        execute(AddAttributeCommand(entity, attributeName, insideText))
     }
 
     override fun renameAttribute(entity: Entity, name:String, newName: String){
@@ -49,5 +50,9 @@ class Controller() : GUIEvent{
 
     override fun changeSectionText(entity: Entity, name:String, insideText:String){
         entity.changeSectionText(name, insideText)
+    }
+
+    fun clearStack(){
+        undoStack.clearStack()
     }
 }

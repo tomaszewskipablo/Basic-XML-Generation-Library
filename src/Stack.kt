@@ -12,6 +12,11 @@ class UndoStack {
         if (stack.isNotEmpty())
             stack.pop().undo()
     }
+
+    fun clearStack(){
+        while (stack.isNotEmpty())
+            stack.pop().undo()
+    }
 }
 
 interface Command {
@@ -49,9 +54,9 @@ class RenameEntityCommand(val entity: Entity, val newName:String, val oldName:St
     }
 }
 
-class AddAttributeCommand(val entityParent: Entity, val attributeName:String) : Command {
+class AddAttributeCommand(val entityParent: Entity, val attributeName:String, val insideText:String) : Command {
     override fun run() {
-        entityParent.addAttribute(attributeName)
+        entityParent.addAttribute(attributeName, insideText)
     }
 
     override fun undo() {
@@ -59,13 +64,13 @@ class AddAttributeCommand(val entityParent: Entity, val attributeName:String) : 
     }
 }
 
-class RemoveAttributeCommand(val entityParent: Entity, val attributeName:String) : Command {
+class RemoveAttributeCommand(val entityParent: Entity, val attributeName:String, val insideText:String) : Command {
     override fun run() {
         entityParent.removeAtttribute(attributeName)
     }
 
     override fun undo() {
-        entityParent.addAttribute(attributeName)
+        entityParent.addAttribute(attributeName, insideText)
     }
 }
 
