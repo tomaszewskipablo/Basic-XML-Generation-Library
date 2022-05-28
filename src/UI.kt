@@ -1,7 +1,4 @@
-import com.sun.xml.internal.ws.api.ha.StickyFeature
-import jdk.jfr.EventType
 import java.awt.*
-import java.awt.SystemColor.text
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
 import java.awt.event.MouseAdapter
@@ -17,6 +14,7 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 
+
 // any event UI can do
 interface GUIEvent{
     fun renameEntity(entity: Entity, newName:String)
@@ -31,9 +29,6 @@ interface GUIEvent{
     fun renameSection(entity: Entity, name:String, newName: String)
     fun changeSectionText(entity: Entity, name:String, insideText:String)
 }
-
-
-
 
 class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel(), IObservable<GUIEvent> {
     override val observers: MutableList<GUIEvent> = mutableListOf<GUIEvent>()
@@ -281,58 +276,82 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
     }
 }
 
-class WindowSkeleton(var root: Entity?=null, var controller: Controller, val version:String,val codding:String, val standalone:String, var mode:WriteToMode) : JFrame("title") {
+class WindowSkeleton(var root: Entity, var controller: Controller, val version:String,
+                     val codding:String, val standalone:String) : JFrame("title") {
     var xmlHeader = "<?xml version=\"$version\" encoding=\"$codding\" standalone=\"$standalone\" ?>"
     lateinit var componentSkeleton: ComponentSkeleton
+    var modeWriteToList: MutableList<WriteToMode> = mutableListOf()
 
     var jScrollPane = JScrollPane()
 
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
-        size = Dimension(700, 1000)
+        size = Dimension(700, 900)
         layout = BorderLayout()
-        jScrollPane.viewport.add(ComponentSkeleton(root!!, controller))
+        jScrollPane.viewport.add(ComponentSkeleton(root, controller))
         add(jScrollPane)
 
         var serializeButton = JButton("Serialize")
         serializeButton.setBounds(0, 230, 50, 20)
         serializeButton.addActionListener {
-
-            writeTo(xmlHeader, root!!.serialization(), mode)
-
+            writeTo(xmlHeader, root.serialization(), modeWriteToList)
         }
 
         var loadButton = JButton("Load")
         loadButton.addActionListener {
-            val b = Book("ToPOWINNOBYC", "WSORKU BOOK")
+            val b = Book("great book", "great book about nothing")
             val s1 = Student(7, b, "Cristiano", "Ronaldo", StudentType.Doctoral)
-            createXMLObject(s1, root!!)
+            createXMLObject(s1, root)
         }
 
         var undo = JButton("Undo")
         undo.addActionListener {
             controller.undoStack.undo()
         }
-        add(undo, BorderLayout.WEST)
-        add(loadButton, BorderLayout.SOUTH)
-        add(serializeButton, BorderLayout.NORTH)
 
+        val fileCheckBox = JCheckBox("File")
+        fileCheckBox.setBounds(100, 100, 50, 50)
+        val consoleCheckBox = JCheckBox("Console", true)
+        modeWriteToList.add(WriteToMode.Console)
+
+        consoleCheckBox.setBounds(100, 150, 50, 50)
+        fileCheckBox.addActionListener {
+            if(fileCheckBox.isSelected)
+                modeWriteToList.add(WriteToMode.File)
+            else
+                modeWriteToList.remove(WriteToMode.File)
+        }
+        consoleCheckBox.addActionListener {
+            if(consoleCheckBox.isSelected)
+                modeWriteToList.add(WriteToMode.Console)
+            else
+                modeWriteToList.remove(WriteToMode.Console)
+        }
+
+        val manipulationPanel = JPanel()
+        manipulationPanel.layout = BoxLayout(manipulationPanel, BoxLayout.X_AXIS)
+        manipulationPanel.add(serializeButton)
+        manipulationPanel.add(loadButton)
+        manipulationPanel.add(undo)
+        add(manipulationPanel, BorderLayout.NORTH)
+
+        manipulationPanel.add(fileCheckBox)
+        manipulationPanel.add(consoleCheckBox)
     }
 
     fun open() {
         isVisible = true
     }
 
-    fun writeTo(xmlHeader:String, xml:String, mode: WriteToMode){
-        if(WriteToMode.File == mode) {
-            // using java class java.io.PrintWriter
+    private fun writeTo(xmlHeader:String, xml:String, modeWriteToList: MutableList<WriteToMode>){
+        if(modeWriteToList.find { it ==  WriteToMode.File}!= null) {
             val writer = PrintWriter("file.txt")
             writer.append(xmlHeader)
             writer.append('\n')
             writer.append(xml)
             writer.close()
         }
-        else if(WriteToMode.Console == mode) {
+        if(modeWriteToList.find { it ==  WriteToMode.Console}!= null) {
             println(xmlHeader)
             println(xml)
         }
@@ -345,7 +364,7 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller, val ver
             controller.execute(RenameEntityCommand(parentEntity, tableName(obj).toString(), parentEntity.name))
             createXMLObject(o, parentEntity)
         } else {
-            obj.declaredMemberProperties.forEach {
+            obj.declaredMemberProperties.forEach { it ->
                 if (!Ignore(it)) {
                     if (it.returnType.classifier.isCollection()) {
                         if (innerText(it, o)) {
@@ -374,7 +393,7 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller, val ver
                         if (innerText(it, o)) {
                             controller.execute(AddSectionCommand(parentEntity,it.name,it.call(o).toString()))
                         } else {
-                            controller.execute(AddAttributeCommand(parentEntity,it.name,it.call(o).toString())) // it.call(o).toString()
+                            controller.execute(AddAttributeCommand(parentEntity,it.name,it.call(o).toString()))
                         }
                     }
                 }
@@ -391,15 +410,14 @@ class WindowSkeleton(var root: Entity?=null, var controller: Controller, val ver
         else c.name
 
     private fun innerText(c: KProperty<*>, o:Any) =
-        if(c.hasAnnotation<XmlTagContent>()) true
-        else false
+        c.hasAnnotation<XmlTagContent>()
 
     private fun Ignore(c: KProperty<*>) =
         c.hasAnnotation<XmlIgnore>()
 
 
-    fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
-    fun KClassifier?.isCollection() = this is KClass<*> && this.isSubclassOf(Collection::class)
+    private fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
+    private fun KClassifier?.isCollection() = this is KClass<*> && this.isSubclassOf(Collection::class)
 }
 
 enum class WriteToMode {File, Console}
@@ -407,10 +425,9 @@ enum class WriteToMode {File, Console}
 fun main() {
     var root = Entity("default name",null)
     var controller = Controller()
-    val w = WindowSkeleton(root, controller, "1.0","UTF-8", "no", WriteToMode.Console)
+    val w = WindowSkeleton(root, controller, "1.0","UTF-8", "no")
 
-    val b = Book("title","JK ROwling")
+    val b = Book("title","JK Rowling")
     val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
-    //w.createXMLObject(s1, null)
     w.open()
 }
