@@ -14,8 +14,6 @@ import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 
-
-// any event UI can do
 interface GUIEvent{
     fun renameEntity(entity: Entity, newName:String)
     fun addEntity(newEntityName:String, parentEntity: Entity): Entity
@@ -48,7 +46,6 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         )
         createPopupMenu()
 
-
         entity.addObserver {Event, value, name, entity -> handleThisEvent(Event, value, name, entity) }
         addObserver(controller)
     }
@@ -74,7 +71,6 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             val toBeRemoved = components.find { it is AttributeComponent && name == it.nameAttribute }
             if(toBeRemoved != null)
                 remove(toBeRemoved as AttributeComponent)
-            //s.jText.text = value
         }
         else if(typeEvent == TypeEvent.AddSection) {
             add(ConcreteEntityComponent(name!!,value!!))
@@ -83,7 +79,6 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             val toBeRemoved = components.find { it is ConcreteEntityComponent && name == it.text }
             if(toBeRemoved != null)
                 remove(toBeRemoved as ConcreteEntityComponent)
-            //s.jText.text = value
         }
         else if(typeEvent == TypeEvent.RenameAttribute) {
             val element = components.find { it is AttributeComponent && name == it.nameAttribute }
@@ -285,20 +280,20 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
         jScrollPane.viewport.add(ComponentSkeleton(root, controller))
         add(jScrollPane)
 
-        var serializeButton = JButton("Serialize")
+        val serializeButton = JButton("Serialize")
         serializeButton.setBounds(0, 230, 50, 20)
         serializeButton.addActionListener {
             writeTo(xmlHeader, root.serialization(), modeWriteToList)
         }
 
-        var loadButton = JButton("Load")
+        val loadButton = JButton("Load")
         loadButton.addActionListener {
             val b = Book("great book", "great book about nothing")
             val s1 = Student(7, b, "Cristiano", "Ronaldo", StudentType.Doctoral)
             createXMLObject(s1, root)
         }
 
-        var undo = JButton("Undo")
+        val undo = JButton("Undo")
         undo.addActionListener {
             controller.undoStack.undo()
         }
@@ -421,7 +416,5 @@ fun main() {
     var controller = Controller()
     val w = WindowSkeleton(root, controller, "1.0","UTF-8", "no")
 
-    val b = Book("title","JK Rowling")
-    val s1 = Student(7, b,"Cristiano", "Ronaldo", StudentType.Doctoral)
     w.open()
 }
