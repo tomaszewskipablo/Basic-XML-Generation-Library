@@ -3,52 +3,51 @@ class Controller() : GUIEvent{
     fun execute(c: Command) {
         undoStack.execute(c)
     }
-    override fun renameEntity(entity: Entity, newName:String) {
-        execute(RenameEntityCommand(entity, newName, entity.name))
+    override fun renameEntity(entity: ObservableEntity, newName:String) {
+        execute(RenameEntityCommand(entity, newName, entity.entityObject.name))
     }
 
-    override fun addEntity(newEntityName:String, parentEntity: Entity): Entity{
-        val e = Entity(newEntityName,parentEntity)
-        execute(AddCommand(parentEntity, e))
-        return e
+    override fun addEntity(newEntityName:String, parentEntity: ObservableEntity){
+        execute(AddCommand(parentEntity, newEntityName))
     }
 
-    override fun deleteEntity(entity: Entity, removeEntity:String){
-        val e = entity.children.find { it is Entity && it.name == removeEntity}
+    override fun deleteEntity(entity: ObservableEntity, removeEntity:String){
+        val e = entity.entityObject.children.find { it is Entity && it.name == removeEntity}
         if(e != null) {
-            execute(RemoveCommand(entity, e as Entity))
+            val eN = e as Entity
+            execute(RemoveCommand(entity, e.name))
         }
     }
 
-    override fun removeAttribute(entity: Entity, attributeName:String, insideText:String){
+    override fun removeAttribute(entity: ObservableEntity, attributeName:String, insideText:String){
         execute(RemoveAttributeCommand(entity, attributeName, insideText))
     }
 
-    override fun addAttribute(entity: Entity, attributeName:String, insideText:String){
+    override fun addAttribute(entity: ObservableEntity, attributeName:String, insideText:String){
         execute(AddAttributeCommand(entity, attributeName, insideText))
     }
 
-    override fun renameAttribute(entity: Entity, name:String, newName: String){
+    override fun renameAttribute(entity: ObservableEntity, name:String, newName: String){
         execute(RenameAttributeCommand(entity, name, newName))
     }
 
-    override fun addSection(entity: Entity, sectionName:String, insideText:String){
+    override fun addSection(entity: ObservableEntity, sectionName:String, insideText:String){
         execute(AddSectionCommand(entity,sectionName, insideText))
     }
 
-    override fun removeSection(entity: Entity, sectionName:String, insideText:String){
+    override fun removeSection(entity: ObservableEntity, sectionName:String, insideText:String){
         execute(RemoveSectionCommand(entity,sectionName, insideText))
     }
 
-    override fun renameSection(entity: Entity, name:String, newName: String){
+    override fun renameSection(entity: ObservableEntity, name:String, newName: String){
         execute(RenameSectionCommand(entity, name,newName))
     }
 
-    override fun changeAttributeText(entity: Entity, name:String, insideText:String){
+    override fun changeAttributeText(entity: ObservableEntity, name:String, insideText:String){
         entity.changeAttributeText(name, insideText)
     }
 
-    override fun changeSectionText(entity: Entity, name:String, insideText:String){
+    override fun changeSectionText(entity: ObservableEntity, name:String, insideText:String){
         entity.changeSectionText(name, insideText)
     }
 

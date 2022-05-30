@@ -24,37 +24,37 @@ interface Command {
     fun undo()
 }
 
-class AddCommand(val entityParent: Entity, val entity: Entity) : Command {
+class AddCommand(val entityParent: ObservableEntity, val name: String) : Command {
     override fun run() {
-        entityParent.addEntity(entity)
+        entityParent.addEntity(name)
     }
 
     override fun undo() {
-        entityParent.removeEntity(entity)
+        entityParent.removeEntity(name)
     }
 }
 
-class RemoveCommand(val entityParent: Entity, val entity: Entity) : Command {
+class RemoveCommand(val entityParent: ObservableEntity, val name: String) : Command {
     override fun run() {
-        entityParent.removeEntity(entity)
+        entityParent.removeEntity(name)
     }
 
     override fun undo() {
-        entityParent.addEntity(entity)
+        entityParent.addEntity(name)
     }
 }
 
-class RenameEntityCommand(val entity: Entity, val newName:String, val oldName:String) : Command {
+class RenameEntityCommand(val entity: ObservableEntity, val newName:String, val oldName:String) : Command {
     override fun run() {
-        entity.rename(newName)
+        entity.renameEntity(newName)
     }
 
     override fun undo() {
-        entity.rename(oldName)
+        entity.renameEntity(oldName)
     }
 }
 
-class AddAttributeCommand(val entityParent: Entity, val attributeName:String, val insideText:String) : Command {
+class AddAttributeCommand(val entityParent: ObservableEntity, val attributeName:String, val insideText:String) : Command {
     override fun run() {
         entityParent.addAttribute(attributeName, insideText)
     }
@@ -64,7 +64,7 @@ class AddAttributeCommand(val entityParent: Entity, val attributeName:String, va
     }
 }
 
-class RemoveAttributeCommand(val entityParent: Entity, val attributeName:String, val insideText:String) : Command {
+class RemoveAttributeCommand(val entityParent: ObservableEntity, val attributeName:String, val insideText:String) : Command {
     override fun run() {
         entityParent.removeAtttribute(attributeName)
     }
@@ -74,7 +74,7 @@ class RemoveAttributeCommand(val entityParent: Entity, val attributeName:String,
     }
 }
 
-class RenameAttributeCommand(val entity: Entity, val newName:String, val oldName:String) : Command {
+class RenameAttributeCommand(val entity: ObservableEntity, val newName:String, val oldName:String) : Command {
     override fun run() {
         entity.renameAttribute(newName, oldName)
     }
@@ -84,7 +84,7 @@ class RenameAttributeCommand(val entity: Entity, val newName:String, val oldName
     }
 }
 
-class AddSectionCommand(val entityParent: Entity, val sectionName:String, val insideText:String) : Command {
+class AddSectionCommand(val entityParent: ObservableEntity, val sectionName:String, val insideText:String) : Command {
     override fun run() {
         entityParent.addSection(sectionName, insideText)
     }
@@ -94,7 +94,7 @@ class AddSectionCommand(val entityParent: Entity, val sectionName:String, val in
     }
 }
 
-class RemoveSectionCommand(val entityParent: Entity, val sectionName:String, val insideText:String) : Command {
+class RemoveSectionCommand(val entityParent: ObservableEntity, val sectionName:String, val insideText:String) : Command {
     override fun run() {
         entityParent.removeSection(sectionName, insideText)
     }
@@ -104,7 +104,7 @@ class RemoveSectionCommand(val entityParent: Entity, val sectionName:String, val
     }
 }
 
-class RenameSectionCommand(val entity: Entity, val newName:String, val oldName:String) : Command {
+class RenameSectionCommand(val entity: ObservableEntity, val newName:String, val oldName:String) : Command {
     override fun run() {
         entity.renameSection(newName, oldName)
     }

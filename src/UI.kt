@@ -15,21 +15,22 @@ import kotlin.reflect.full.hasAnnotation
 import kotlin.reflect.full.isSubclassOf
 
 interface GUIEvent{
-    fun renameEntity(entity: Entity, newName:String)
-    fun addEntity(newEntityName:String, parentEntity: Entity): Entity
-    fun deleteEntity(entity: Entity, removeEntity:String)
-    fun addAttribute(entity: Entity, newEntityName:String, insideText:String)
-    fun removeAttribute(entity: Entity, removeAttribute: String, insideText:String)
-    fun renameAttribute(entity: Entity, name: String, nameNew:String)
-    fun changeAttributeText(entity: Entity, name:String, nameNew:String)
-    fun addSection(entity: Entity, sectionName:String, insideText:String)
-    fun removeSection(entity: Entity, sectionName:String, insideText:String)
-    fun renameSection(entity: Entity, name:String, newName: String)
-    fun changeSectionText(entity: Entity, name:String, insideText:String)
+    fun renameEntity(entity: ObservableEntity, newName:String)
+    fun addEntity(newEntityName:String, parentEntity: ObservableEntity)
+    fun deleteEntity(entity: ObservableEntity, removeEntity:String)
+    fun addAttribute(entity: ObservableEntity, newEntityName:String, insideText:String)
+    fun removeAttribute(entity: ObservableEntity, removeAttribute: String, insideText:String)
+    fun renameAttribute(entity: ObservableEntity, name: String, nameNew:String)
+    fun changeAttributeText(entity: ObservableEntity, name:String, nameNew:String)
+    fun addSection(entity: ObservableEntity, sectionName:String, insideText:String)
+    fun removeSection(entity: ObservableEntity, sectionName:String, insideText:String)
+    fun renameSection(entity: ObservableEntity, name:String, newName: String)
+    fun changeSectionText(entity: ObservableEntity, name:String, insideText:String)
 }
 
 class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel(), IObservable<GUIEvent> {
     override val observers: MutableList<GUIEvent> = mutableListOf<GUIEvent>()
+    var observableEntity = ObservableEntity(entity)
     var nameEntity = entity.name
 
     override fun paintComponent(g: Graphics) {
@@ -46,14 +47,14 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         )
         createPopupMenu()
 
-        entity.addObserver {Event, value, name, entity -> handleThisEvent(Event, value, name, entity) }
+        observableEntity.addObserver {Event, value, name, entity -> handleThisEvent(Event, value, name, entity) }
         addObserver(controller)
     }
 
     // Update View
     fun handleThisEvent(typeEvent: TypeEvent, name: String?, value: String?, child: Entity?){
         if(typeEvent == TypeEvent.RenameEntity) {
-            nameEntity = value!!
+            nameEntity = name!!
         }
         else if(typeEvent == TypeEvent.AddEntity) {
             add(ComponentSkeleton(child!!,controller))
@@ -105,21 +106,17 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         val a = JMenuItem("Add Tag")
         a.addActionListener {
             val text = JOptionPane.showInputDialog("Tag name")
-
-
             notifyObservers{
-                it.addEntity(text, entity)
+                it.addEntity(text, observableEntity)
             }
-            revalidate()
-            }
+        }
         popupmenu.add(a)
 
         val deleteEntityButton = JMenuItem("Remove Tag")
         deleteEntityButton.addActionListener {
             val text = JOptionPane.showInputDialog("entity name to be removed")
             notifyObservers{
-
-                it.deleteEntity(entity,text)
+                it.deleteEntity(observableEntity,text)
             }
         }
         popupmenu.add(deleteEntityButton)
@@ -127,8 +124,9 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         val c = JMenuItem("Rename Tag")
         c.addActionListener {
             val text = JOptionPane.showInputDialog("Rename")
+            controller.execute(RenameEntityCommand(observableEntity, text, observableEntity.entityObject.name))
             notifyObservers{
-                it.renameEntity(entity,text)
+                it.renameEntity(observableEntity,text)
             }
         }
         popupmenu.add(c)
@@ -137,7 +135,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         b.addActionListener {
             val text = JOptionPane.showInputDialog("attribute name")
             notifyObservers{
-                it.addAttribute(entity,text, "")
+                it.addAttribute(observableEntity,text, "")
             }
             revalidate()
         }
@@ -148,7 +146,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         r.addActionListener {
             val text = JOptionPane.showInputDialog("attribute name to be removed")
             notifyObservers{
-                it.removeAttribute(entity,text, "")
+                it.removeAttribute(observableEntity,text, "")
             }
         }
         r.background = Color.LIGHT_GRAY
@@ -160,7 +158,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             if(entity.attributes[attributeName] != null) {
                 val newName = JOptionPane.showInputDialog("New name")
                 notifyObservers {
-                    it.renameAttribute(entity, attributeName, newName)
+                    it.renameAttribute(observableEntity, attributeName, newName)
                 }
             }
         }
@@ -172,7 +170,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         en.addActionListener {
             val text = JOptionPane.showInputDialog("Section name")
             notifyObservers{
-                it.addSection(entity,text, "")
+                it.addSection(observableEntity,text, "")
             }
             revalidate()
         }
@@ -186,7 +184,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             if(element != null) {
                 val s = element as EntityConcrete
                 notifyObservers {
-                    it.removeSection(entity, text, s.innerText)
+                    it.removeSection(observableEntity, text, s.innerText)
                 }
                 revalidate()
             }
@@ -200,7 +198,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             if(entity.children.find{it.name == sectionName} != null) {
                 val newName = JOptionPane.showInputDialog("New name")
                 notifyObservers {
-                    it.renameSection(entity, sectionName, newName)
+                    it.renameSection(observableEntity, sectionName, newName)
                 }
             }
         }
@@ -232,7 +230,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
 
                 override fun keyReleased(e: KeyEvent?) {
                     notifyObservers{
-                        it.changeAttributeText(entity,nameAttribute,jText.text)
+                        it.changeAttributeText(observableEntity,nameAttribute,jText.text)
                     }
                 }
             })
@@ -256,7 +254,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
 
                 override fun keyReleased(e: KeyEvent?) {
                     notifyObservers{
-                        it.changeSectionText(entity,name,jTextField.text)
+                        it.changeSectionText(observableEntity,name,jTextField.text)
                     }
                 }
             })
@@ -290,7 +288,7 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
         loadButton.addActionListener {
             val b = Book("great book", "great book about nothing")
             val s1 = Student(7, b, "Cristiano", "Ronaldo", StudentType.Doctoral)
-            createXMLObject(s1, root)
+            root.createXMLObject(s1, root)
         }
 
         val undo = JButton("Undo")
@@ -345,68 +343,6 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
             println(xml)
         }
     }
-
-    private fun createXMLObject(o: Any, parentEntity: Entity) {
-        val obj = o::class
-        if (parentEntity.name != tableName(obj)) {
-            //controller.clearStack()
-            controller.execute(RenameEntityCommand(parentEntity, tableName(obj).toString(), parentEntity.name))
-            createXMLObject(o, parentEntity)
-        } else {
-            obj.declaredMemberProperties.forEach { it ->
-                if (!Ignore(it)) {
-                    if (it.returnType.classifier.isCollection()) {
-                        if (innerText(it, o)) {
-                            var listName = it.name
-                            val listEntity = controller.addEntity(listName, parentEntity) // QUESTION is it ok to return value by controller?
-                            val coll = it.call(o) as Collection<*>
-                            coll.forEach {
-                                if (it != null) {
-                                    controller.execute(AddSectionCommand(listEntity,listName,it.toString()))
-                                }
-                            }
-                        } else {
-                            val coll = it.call(o) as Collection<*>
-                            controller.execute(AddAttributeCommand(parentEntity,fieldName(it),it.call(o).toString()))
-                        }
-                    } else if (it.returnType.classifier.isEnum()) {
-                        if (innerText(it, o)) {
-                            controller.execute(AddAttributeCommand(parentEntity,fieldName(it),it.call(o).toString()))
-                        } else {
-                            controller.execute(AddSectionCommand(parentEntity,fieldName(it),it.call(o).toString()))
-                        }
-                    } else if (it.call(o)!!::class.isData) {
-                        val dataClassEntity = controller.addEntity(it.name, parentEntity)
-                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), dataClassEntity)
-                    } else {
-                        if (innerText(it, o)) {
-                            controller.execute(AddSectionCommand(parentEntity,it.name,it.call(o).toString()))
-                        } else {
-                            controller.execute(AddAttributeCommand(parentEntity,it.name,it.call(o).toString()))
-                        }
-                    }
-                }
-            }
-        }
-    }
-
-    private fun tableName(c: KClass<*>) =
-        if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
-        else c.simpleName
-
-    private fun fieldName(c: KProperty<*>) =
-        if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
-        else c.name
-
-    private fun innerText(c: KProperty<*>, o:Any) =
-        c.hasAnnotation<XmlTagContent>()
-
-    private fun Ignore(c: KProperty<*>) =
-        c.hasAnnotation<XmlIgnore>()
-
-
-    private fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
-    private fun KClassifier?.isCollection() = this is KClass<*> && this.isSubclassOf(Collection::class)
 }
 
 enum class WriteToMode {File, Console}

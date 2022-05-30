@@ -1,8 +1,12 @@
 import jdk.jfr.EventType
 import java.io.File
+import kotlin.reflect.KClass
+import kotlin.reflect.KClassifier
 import kotlin.reflect.KProperty
+import kotlin.reflect.full.declaredMemberProperties
 import kotlin.reflect.full.findAnnotation
 import kotlin.reflect.full.hasAnnotation
+import kotlin.reflect.full.isSubclassOf
 
 abstract class EntityAbstract(name: String, var parent: Entity? = null) {
     init {
@@ -16,51 +20,35 @@ abstract class EntityAbstract(name: String, var parent: Entity? = null) {
     abstract fun accept(v: Visitor)
 }
 
-class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent), IObservable<Event> {
-    override val observers: MutableList<Event> = mutableListOf()
+class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent) {
 
     val children = mutableListOf<EntityAbstract>()
     var attributes = HashMap<String, String>()
 
-    fun rename(nameNew: String){
+    fun renameEntity(nameNew: String){
+        super.name = nameNew
         name = nameNew
-        notifyObservers {
-            it(TypeEvent.RenameEntity, name, nameNew,null)
-        }
     }
 
     fun addAttribute(attributeName:String, insideText:String ){
         attributes[attributeName] = insideText
-        notifyObservers {
-            it(TypeEvent.AddAttribute, attributeName,insideText, null)
-        }
+
     }
 
     fun removeAtttribute(attributeName:String){
         attributes.remove(attributeName)
-        notifyObservers {
-            it(TypeEvent.RemoveAttribute, attributeName,"", null)
-        }
     }
 
-    fun removeEntity(entity: Entity){
-            children.remove(entity)
-        notifyObservers {
-            it(TypeEvent.RemoveEntity, entity.name,"", null)
-        }
+    fun removeEntity(name: String){
+        children.remove(name)
     }
 
-    fun addEntity(entity: Entity){
-        notifyObservers {
-            it(TypeEvent.AddEntity, "","", entity)
-        }
+    fun addEntity(name: String):Entity{
+        return Entity(name, this)
     }
 
     fun addSection(sectionName: String, insideText: String){
         val n = EntityConcrete(sectionName, insideText, this)
-        notifyObservers {
-            it(TypeEvent.AddSection, sectionName,insideText, null)
-        }
     }
 
     fun removeSection(sectionName: String, insideText: String){
@@ -68,9 +56,6 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         if(element != null) {
             val toBeRemoved = element as EntityConcrete
             children.remove(toBeRemoved)
-            notifyObservers {
-                it(TypeEvent.RemoveSection, sectionName, element.innerText, null)
-            }
         }
     }
 
@@ -86,32 +71,29 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         }
     }
 
-    fun renameAttribute(name: String, nameNew:String){
-        val value = attributes[name]
-        attributes.remove(name)
-        attributes[nameNew] = value!!
-        notifyObservers {
-            it(TypeEvent.RenameAttribute, name,nameNew, null)
+    fun renameAttribute(name: String, nameNew:String): Boolean{
+        if(attributes.containsKey(name)) {
+            val value = attributes[name]
+            attributes.remove(name)
+            attributes[nameNew] = value!!
+            return true
         }
+        return false
     }
 
-    fun renameSection(name: String, nameNew:String){
+    fun renameSection(name: String, nameNew:String) : Boolean{
         val element = children.find {  it.name == name } // it is ConcreteEntityComponent &&
         if(element != null) {
             val toBeRenamed = element as EntityConcrete
-        toBeRenamed!!.name = nameNew
-        notifyObservers {
-            it(TypeEvent.RenameSection, name, nameNew, null)
+            toBeRenamed!!.name = nameNew
+            return true
         }
-        }
+        return false
     }
 
     override var name: String = name
         set(value) {
             field=value
-            notifyObservers {
-                it(TypeEvent.RemoveEntity, "", name, null)
-            }
         }
 
     override fun accept(v: Visitor) {
@@ -181,6 +163,68 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     }
         return attributes
     }
+
+    fun createXMLObject(o: Any, parentEntity: Entity) {
+        val obj = o::class
+        if (parentEntity.name != tableName(obj) && parentEntity.parent != null) {
+            parentEntity.renameEntity(tableName(obj)!!)
+            createXMLObject(o, parentEntity)
+        } else {
+            obj.declaredMemberProperties.forEach { it ->
+                if (!Ignore(it)) {
+                    if (it.returnType.classifier.isCollection()) {
+                        if (innerText(it, o)) {
+                            var listName = it.name
+
+                            val listEntity = parentEntity.addEntity(tableName(obj)!!)
+                            val coll = it.call(o) as Collection<*>
+                            coll.forEach {
+                                if (it != null) {
+                                    parentEntity.addSection(listName,it.toString())
+                                }
+                            }
+                        } else {
+                            val coll = it.call(o) as Collection<*>
+                            parentEntity.addAttribute(fieldName(it),it.call(o).toString())
+                        }
+                    } else if (it.returnType.classifier.isEnum()) {
+                        if (innerText(it, o)) {
+                            parentEntity.addAttribute(fieldName(it),it.call(o).toString())
+                        } else {
+                            parentEntity.addSection(fieldName(it),it.call(o).toString())
+                        }
+                    } else if (it.call(o)!!::class.isData) {
+                        var dataClassEntity = parentEntity.addEntity(it.name)
+                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), dataClassEntity)
+                    } else {
+                        if (innerText(it, o)) {
+                            parentEntity.addSection(fieldName(it),it.call(o).toString())
+                        } else {
+                            parentEntity.addAttribute(fieldName(it),it.call(o).toString())
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun tableName(c: KClass<*>) =
+        if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
+        else c.simpleName
+
+    private fun fieldName(c: KProperty<*>) =
+        if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
+        else c.name
+
+    private fun innerText(c: KProperty<*>, o:Any) =
+        c.hasAnnotation<XmlTagContent>()
+
+    private fun Ignore(c: KProperty<*>) =
+        c.hasAnnotation<XmlIgnore>()
+
+
+    private fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
+    private fun KClassifier?.isCollection() = this is KClass<*> && this.isSubclassOf(Collection::class)
 }
 
 class EntityConcrete(name: String, var innerText:String, parent: Entity? = null) : EntityAbstract(name, parent) {
@@ -195,22 +239,3 @@ interface Visitor {
     fun endVisit(e: Entity) {}
 }
 
-interface IObservable<O> {
-    val observers: MutableList<O>
-
-    fun addObserver(observer: O) {
-        observers.add(observer)
-    }
-
-    fun removeObserver(observer: O) {
-        observers.remove(observer)
-    }
-
-    fun notifyObservers(handler: (O) -> Unit) {
-        observers.toList().forEach { handler(it) }
-    }
-}
-
-typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, entity: Entity?) -> Unit
-
-enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, RemoveAttribute, RenameAttribute, AddSection,RemoveSection, RenameSection}
