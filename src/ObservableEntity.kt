@@ -1,3 +1,5 @@
+import kotlin.reflect.full.declaredMemberProperties
+
 class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
 
     override val observers: MutableList<Event> = mutableListOf()
@@ -17,7 +19,7 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
     }
 
     fun removeAtttribute(attributeName: String) {
-        entityObject.removeAtttribute(attributeName)
+        entityObject.removeAttribute(attributeName)
         notifyObservers {
             it(TypeEvent.RemoveAttribute, attributeName, "", null)
         }
@@ -30,11 +32,12 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
         }
     }
 
-    fun addEntity(name: String) {
+    fun addEntity(name: String) : Entity {
         val e = entityObject.addEntity(name)
         notifyObservers {
             it(TypeEvent.AddEntity, "", "", e)
         }
+        return e
     }
 
     fun addSection(sectionName: String, insideText: String) {
@@ -75,6 +78,51 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
             notifyObservers {
                 it(TypeEvent.RenameSection, name, nameNew, null)
             }
+    }
+
+    fun createXMLObject(o: Any, parentEntity: ObservableEntity) {
+        val obj = o::class
+        if (parentEntity.entityObject.name != tableName(obj)  && parentEntity.entityObject.children.size == 0) {
+                parentEntity.renameEntity(tableName(obj)!!)
+                createXMLObject(o, parentEntity)
+        } else {
+            obj.declaredMemberProperties.forEach { it ->
+                if (!Ignore(it)) {
+                    if (it.returnType.classifier.isCollection()) {
+                        if (innerText(it, o)) {
+                            var listName = it.name
+
+                            val listEntity = parentEntity.addEntity(tableName(obj)!!)
+                            val coll = it.call(o) as Collection<*>
+                            coll.forEach {
+                                if (it != null) {
+                                    parentEntity.addSection(listName,it.toString())
+                                }
+                            }
+                        } else {
+                            val coll = it.call(o) as Collection<*>
+                            parentEntity.addAttribute(fieldName(it),it.call(o).toString())
+                        }
+                    } else if (it.returnType.classifier.isEnum()) {
+                        if (innerText(it, o)) {
+                            parentEntity.addAttribute(fieldName(it),it.call(o).toString())
+                        } else {
+                            parentEntity.addSection(fieldName(it),it.call(o).toString())
+                        }
+                    } else if (it.call(o)!!::class.isData) {
+                        var dataClassEntity = addEntity(it.name)
+                        var obserEntity = ObservableEntity(dataClassEntity)     // TODO DATACLASS IS NOT BEING OBSERVED
+                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), obserEntity)
+                    } else {
+                        if (innerText(it, o)) {
+                            parentEntity.addSection(fieldName(it),it.call(o).toString())
+                        } else {
+                            parentEntity.addAttribute(fieldName(it),it.call(o).toString())
+                        }
+                    }
+                }
+            }
+        }
     }
 }
 interface IObservable<O> {

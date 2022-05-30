@@ -275,7 +275,8 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(700, 900)
         layout = BorderLayout()
-        jScrollPane.viewport.add(ComponentSkeleton(root, controller))
+        componentSkeleton = ComponentSkeleton(root, controller)
+        jScrollPane.viewport.add(componentSkeleton)
         add(jScrollPane)
 
         val serializeButton = JButton("Serialize")
@@ -288,7 +289,8 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
         loadButton.addActionListener {
             val b = Book("great book", "great book about nothing")
             val s1 = Student(7, b, "Cristiano", "Ronaldo", StudentType.Doctoral)
-            root.createXMLObject(s1, root)
+            componentSkeleton.observableEntity.createXMLObject(s1, componentSkeleton.observableEntity)
+            //root.createXMLObject(s1, root)
         }
 
         val undo = JButton("Undo")

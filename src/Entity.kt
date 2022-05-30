@@ -35,7 +35,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
 
     }
 
-    fun removeAtttribute(attributeName:String){
+    fun removeAttribute(attributeName:String){
         attributes.remove(attributeName)
     }
 
@@ -166,7 +166,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
 
     fun createXMLObject(o: Any, parentEntity: Entity) {
         val obj = o::class
-        if (parentEntity.name != tableName(obj) && parentEntity.parent != null) {
+        if (parentEntity.name != tableName(obj)) {
             parentEntity.renameEntity(tableName(obj)!!)
             createXMLObject(o, parentEntity)
         } else {
@@ -207,24 +207,6 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
             }
         }
     }
-
-    private fun tableName(c: KClass<*>) =
-        if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
-        else c.simpleName
-
-    private fun fieldName(c: KProperty<*>) =
-        if(c.hasAnnotation<XmlName>()) c.findAnnotation<XmlName>()!!.text
-        else c.name
-
-    private fun innerText(c: KProperty<*>, o:Any) =
-        c.hasAnnotation<XmlTagContent>()
-
-    private fun Ignore(c: KProperty<*>) =
-        c.hasAnnotation<XmlIgnore>()
-
-
-    private fun KClassifier?.isEnum() = this is KClass<*> && this.isSubclassOf(Enum::class)
-    private fun KClassifier?.isCollection() = this is KClass<*> && this.isSubclassOf(Collection::class)
 }
 
 class EntityConcrete(name: String, var innerText:String, parent: Entity? = null) : EntityAbstract(name, parent) {
