@@ -1,3 +1,4 @@
+import GUI.Controller
 import java.awt.*
 import java.awt.event.KeyEvent
 import java.awt.event.KeyListener
@@ -6,13 +7,6 @@ import java.awt.event.MouseEvent
 import java.io.PrintWriter
 import javax.swing.*
 import javax.swing.border.CompoundBorder
-import kotlin.reflect.KClass
-import kotlin.reflect.KClassifier
-import kotlin.reflect.KProperty
-import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.hasAnnotation
-import kotlin.reflect.full.isSubclassOf
 
 interface GUIEvent{
     fun renameEntity(entity: ObservableEntity, newName:String)
@@ -290,7 +284,6 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
             val b = Book("great book", "great book about nothing")
             val s1 = Student(7, b, "Cristiano", "Ronaldo", StudentType.Doctoral)
             componentSkeleton.observableEntity.createXMLObject(s1, componentSkeleton.observableEntity)
-            //root.createXMLObject(s1, root)
         }
 
         val undo = JButton("Undo")

@@ -1,4 +1,21 @@
-class Controller() : GUIEvent{
+package GUI
+
+import AddAttributeCommand
+import AddCommand
+import AddSectionCommand
+import Command
+import Entity
+import GUIEvent
+import ObservableEntity
+import RemoveAttributeCommand
+import RemoveCommand
+import RemoveSectionCommand
+import RenameAttributeCommand
+import RenameEntityCommand
+import RenameSectionCommand
+import UndoStack
+
+class Controller() : GUIEvent {
     val undoStack = UndoStack()
     fun execute(c: Command) {
         undoStack.execute(c)
@@ -32,15 +49,15 @@ class Controller() : GUIEvent{
     }
 
     override fun addSection(entity: ObservableEntity, sectionName:String, insideText:String){
-        execute(AddSectionCommand(entity,sectionName, insideText))
+        execute(AddSectionCommand(entity, sectionName, insideText))
     }
 
     override fun removeSection(entity: ObservableEntity, sectionName:String, insideText:String){
-        execute(RemoveSectionCommand(entity,sectionName, insideText))
+        execute(RemoveSectionCommand(entity, sectionName, insideText))
     }
 
     override fun renameSection(entity: ObservableEntity, name:String, newName: String){
-        execute(RenameSectionCommand(entity, name,newName))
+        execute(RenameSectionCommand(entity, name, newName))
     }
 
     override fun changeAttributeText(entity: ObservableEntity, name:String, insideText:String){
