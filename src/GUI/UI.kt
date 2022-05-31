@@ -283,7 +283,7 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
         loadButton.addActionListener {
             val b = Book("great book", "great book about nothing")
             val s1 = Student(7, b, "Cristiano", "Ronaldo", StudentType.Doctoral)
-            componentSkeleton.observableEntity.createXMLObject(s1, componentSkeleton.observableEntity)
+            componentSkeleton.observableEntity.createXMLObject(s1, componentSkeleton.observableEntity, true)
         }
 
         val undo = JButton("Undo")

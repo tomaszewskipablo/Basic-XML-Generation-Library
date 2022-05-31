@@ -1,3 +1,4 @@
+import kotlin.test.assertEquals
 
 fun main() {
     val b = Book("sds","sda")
@@ -10,6 +11,18 @@ fun main() {
 
     println(xml.serialize())
 
+/*    assertEquals(xml.serialize(), "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\n" +
+            "<STUDENT lista2=\"[Ajay, Vijay, Prakash]\" name=\"Cristiano\" type=\"Doctoral\">\n" +
+            "\t<BOOK secondName=\"sda\">\n" +
+            "\t\t<name>sds</name>\n" +
+            "\t</BOOK>\n" +
+            "\t<STUDENT>\n" +
+            "\t</STUDENT>\n" +
+            "\t<lista>Ajay</lista>\n" +
+            "\t<lista>Vijay</lista>\n" +
+            "\t<lista>Prakash</lista>\n" +
+            "\t<number>7</number>\n" +
+            "</STUDENT>")*/
 
     val x = xml.search(::innerTextLonger)
 }

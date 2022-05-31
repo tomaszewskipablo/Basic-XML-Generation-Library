@@ -1,3 +1,4 @@
+import org.w3c.dom.Attr
 import kotlin.reflect.full.declaredMemberProperties
 
 class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
@@ -80,9 +81,53 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
             }
     }
 
-    fun createXMLObject(o: Any, parentEntity: ObservableEntity) {
+        fun removeAllChildren(){
+            val EntitiesToRemove = mutableListOf<String>()
+            val EntityConcreteToRemove = mutableListOf<String>()
+
+            entityObject.children.forEach(){
+                if(it is Entity)
+                    EntitiesToRemove.add(it.name)
+                if(it is EntityConcrete)
+                    EntityConcreteToRemove.add(it.name)
+            }
+
+            EntitiesToRemove.forEach(){
+                val name = it.toString()
+                entityObject.removeEntity(name)
+                notifyObservers {
+                    it(TypeEvent.RemoveEntity, name, "", null)
+                }
+            }
+
+            EntityConcreteToRemove.forEach(){
+                val name = it.toString()
+                entityObject.removeSection(name, "")
+                notifyObservers {
+                    it(TypeEvent.RemoveSection, name, "", null)
+                }
+            }
+
+            val attributeToRemove = mutableListOf<String>()
+
+            entityObject.attributes.forEach()
+            {
+               attributeToRemove.add(it.key)
+            }
+
+           attributeToRemove.forEach(){
+                val name = it
+                entityObject.removeAttribute(name)
+                notifyObservers {
+                    it(TypeEvent.RemoveAttribute, name, "", null)
+                }
+            }
+    }
+
+    fun createXMLObject(o: Any, parentEntity: ObservableEntity, isRoot: Boolean = false) {
         val obj = o::class
-        if (parentEntity.entityObject.name != tableName(obj)  && parentEntity.entityObject.children.size == 0) {
+        if (isRoot){//parentEntity.entityObject.name == "default name") {
+                parentEntity.removeAllChildren()
                 parentEntity.renameEntity(tableName(obj)!!)
                 createXMLObject(o, parentEntity)
         } else {

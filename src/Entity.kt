@@ -1,12 +1,4 @@
-import jdk.jfr.EventType
-import java.io.File
-import kotlin.reflect.KClass
-import kotlin.reflect.KClassifier
-import kotlin.reflect.KProperty
 import kotlin.reflect.full.declaredMemberProperties
-import kotlin.reflect.full.findAnnotation
-import kotlin.reflect.full.hasAnnotation
-import kotlin.reflect.full.isSubclassOf
 
 /**
  * Abstract class the represent the first level of related elements that are organized in a hierarchy.
@@ -65,14 +57,14 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     }
 
     /**
-     * Implements Entity.removeAttribute
-     * Removes attribute from entity children list
+     * Implements Entity.removeEntity
+     * Removes entities from entity children list
      *
-     * @param attributeName key for attribute for entity
-     * @param insideText value for attribute for entity
+     * @param name name of entity to be removed
      */
     fun removeEntity(name: String){
-        children.remove(name)
+        val s = children.find { it.name == name }
+        children.remove(s)
     }
 
     /**
@@ -179,6 +171,8 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
         }
         return false
     }
+
+
 
     override var name: String = name
         set(value) {
@@ -296,7 +290,8 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
      */
     fun createXMLObject(o: Any, parentEntity: Entity) {
         val obj = o::class
-        if (parentEntity.name != tableName(obj)) {
+        val s = tableName(obj)
+        if (parentEntity.name != s) {
             parentEntity.renameEntity(tableName(obj)!!)
             createXMLObject(o, parentEntity)
         } else {
@@ -305,7 +300,6 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
                     if (it.returnType.classifier.isCollection()) {
                         if (innerText(it, o)) {
                             var listName = it.name
-
                             val listEntity = parentEntity.addEntity(tableName(obj)!!)
                             val coll = it.call(o) as Collection<*>
                             coll.forEach {
