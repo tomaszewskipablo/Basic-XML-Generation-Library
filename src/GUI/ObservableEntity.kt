@@ -126,7 +126,7 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
 
     fun createXMLObject(o: Any, parentEntity: ObservableEntity, isRoot: Boolean = false) {
         val obj = o::class
-        if (isRoot){//parentEntity.entityObject.name == "default name") {
+        if (isRoot){
                 parentEntity.removeAllChildren()
                 parentEntity.renameEntity(tableName(obj)!!)
                 createXMLObject(o, parentEntity)
@@ -136,8 +136,6 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
                     if (it.returnType.classifier.isCollection()) {
                         if (innerText(it, o)) {
                             var listName = it.name
-
-                            val listEntity = parentEntity.addEntity(tableName(obj)!!)
                             val coll = it.call(o) as Collection<*>
                             coll.forEach {
                                 if (it != null) {
@@ -155,7 +153,7 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
                             parentEntity.addSection(fieldName(it),it.call(o).toString())
                         }
                     } else if (it.call(o)!!::class.isData) {
-                        var dataClassEntity = addEntity(it.name)
+                        var dataClassEntity = addEntity(it.name)                
                         var obserEntity = ObservableEntity(dataClassEntity)     // TODO DATACLASS IS NOT BEING OBSERVED
                         createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), obserEntity)
                     } else {
