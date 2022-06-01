@@ -2,6 +2,7 @@ import java.util.*
 
 class UndoStack {
     val stack = Stack<Command>()
+    val redoStack = Stack<Command>()
 
     fun execute(c: Command) {
         c.run()
@@ -9,8 +10,17 @@ class UndoStack {
     }
 
     fun undo() {
-        if (stack.isNotEmpty())
-            stack.pop().undo()
+        if (stack.isNotEmpty()) {
+            stack.peek().undo()
+            redoStack.add(stack.pop())
+        }
+    }
+
+    fun redo() {
+        if (redoStack.isNotEmpty()) {
+            redoStack.peek().run()
+            stack.add(redoStack.pop())
+        }
     }
 
     fun clearStack(){
@@ -113,3 +123,24 @@ class RenameSectionCommand(val entity: ObservableEntity, val newName:String, val
         entity.renameSection(oldName,newName)
     }
 }
+
+class ChangeAttributeTextCommand(val entity: ObservableEntity, val name:String, val insideText:String, val insideTextOld:String) : Command {
+    override fun run() {
+        entity.changeAttributeText(name, insideText)
+    }
+
+    override fun undo() {
+        entity.changeAttributeText(name, insideTextOld)
+    }
+}
+
+class ChangeSectionTextCommand(val entity: ObservableEntity, val name:String, val insideText:String, val insideTextOld:String) : Command {
+    override fun run() {
+        entity.changeSectionText(name, insideText)
+    }
+
+    override fun undo() {
+        entity.changeSectionText(name, insideTextOld)
+    }
+}
+

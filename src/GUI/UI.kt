@@ -8,18 +8,18 @@ import java.io.PrintWriter
 import javax.swing.*
 import javax.swing.border.CompoundBorder
 
-interface GUIEvent{
-    fun renameEntity(entity: ObservableEntity, newName:String)
-    fun addEntity(newEntityName:String, parentEntity: ObservableEntity)
-    fun deleteEntity(entity: ObservableEntity, removeEntity:String)
-    fun addAttribute(entity: ObservableEntity, newEntityName:String, insideText:String)
-    fun removeAttribute(entity: ObservableEntity, removeAttribute: String, insideText:String)
-    fun renameAttribute(entity: ObservableEntity, name: String, nameNew:String)
-    fun changeAttributeText(entity: ObservableEntity, name:String, nameNew:String)
-    fun addSection(entity: ObservableEntity, sectionName:String, insideText:String)
-    fun removeSection(entity: ObservableEntity, sectionName:String, insideText:String)
-    fun renameSection(entity: ObservableEntity, name:String, newName: String)
-    fun changeSectionText(entity: ObservableEntity, name:String, insideText:String)
+interface GUIEvent {
+    fun renameEntity(entity: ObservableEntity, newName: String)
+    fun addEntity(newEntityName: String, parentEntity: ObservableEntity)
+    fun deleteEntity(entity: ObservableEntity, removeEntity: String)
+    fun addAttribute(entity: ObservableEntity, newEntityName: String, insideText: String)
+    fun removeAttribute(entity: ObservableEntity, removeAttribute: String, insideText: String)
+    fun renameAttribute(entity: ObservableEntity, name: String, nameNew: String)
+    fun addSection(entity: ObservableEntity, sectionName: String, insideText: String)
+    fun removeSection(entity: ObservableEntity, sectionName: String, insideText: String)
+    fun renameSection(entity: ObservableEntity, name: String, newName: String)
+    fun changeSectionText(entity: ObservableEntity, name: String, insideText: String, insideTextOld: String)
+    fun changeAttributeText(entity: ObservableEntity, name: String, insideText: String, insideTextOld: String)
 }
 
 class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel(), IObservable<GUIEvent> {
@@ -84,6 +84,22 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
             }
         }
         else if(typeEvent == TypeEvent.RenameSection) {
+            val element = components.find { it is ConcreteEntityComponent && name == it.text }
+            if(element != null) {
+                val attributeElement = element as ConcreteEntityComponent
+                attributeElement.text = value!!
+                attributeElement.jLabel.text = value
+            }
+        }
+        else if(typeEvent == TypeEvent.ChangeAttributeInsideText) {
+            val element = components.find { it is AttributeComponent && name == it.nameAttribute }
+            if(element != null) {
+                val attributeElement = element as AttributeComponent
+                attributeElement.insideTextField = value!!
+                attributeElement.jText.text = value!!
+            }
+        }
+        else if(typeEvent == TypeEvent.ChangeSectionInsideText) {
             val element = components.find { it is ConcreteEntityComponent && name == it.text }
             if(element != null) {
                 val attributeElement = element as ConcreteEntityComponent
@@ -224,7 +240,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
 
                 override fun keyReleased(e: KeyEvent?) {
                     notifyObservers{
-                        it.changeAttributeText(observableEntity,nameAttribute,jText.text)
+                        it.changeAttributeText(observableEntity,nameAttribute,jText.text, insideTextField)
                     }
                 }
             })
@@ -248,7 +264,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
 
                 override fun keyReleased(e: KeyEvent?) {
                     notifyObservers{
-                        it.changeSectionText(observableEntity,name,jTextField.text)
+                        it.changeSectionText(observableEntity,name,jTextField.text,insideTextField)
                     }
                 }
             })
@@ -291,6 +307,17 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
             controller.undoStack.undo()
         }
 
+        val redo = JButton("Redo")
+        redo.addActionListener {
+            controller.undoStack.redo()
+        }
+
+        val clearAll = JButton("Clear all")
+        clearAll.addActionListener {
+            controller.undoStack.clearStack()
+            ObservableEntity(root).removeAllChildren()
+        }
+
         val fileCheckBox = JCheckBox("File")
         fileCheckBox.setBounds(100, 100, 50, 50)
         val consoleCheckBox = JCheckBox("Console", true)
@@ -315,10 +342,12 @@ class WindowSkeleton(var root: Entity, var controller: Controller, val version:S
         manipulationPanel.add(serializeButton)
         manipulationPanel.add(loadButton)
         manipulationPanel.add(undo)
+        manipulationPanel.add(redo)
         add(manipulationPanel, BorderLayout.NORTH)
 
         manipulationPanel.add(fileCheckBox)
         manipulationPanel.add(consoleCheckBox)
+        manipulationPanel.add(clearAll)
     }
 
     fun open() {

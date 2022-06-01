@@ -3,6 +3,8 @@ package GUI
 import AddAttributeCommand
 import AddCommand
 import AddSectionCommand
+import ChangeAttributeTextCommand
+import ChangeSectionTextCommand
 import Command
 import Entity
 import GUIEvent
@@ -20,6 +22,7 @@ class Controller() : GUIEvent {
     fun execute(c: Command) {
         undoStack.execute(c)
     }
+
     override fun renameEntity(entity: ObservableEntity, newName:String) {
         execute(RenameEntityCommand(entity, newName, entity.entityObject.name))
     }
@@ -60,12 +63,12 @@ class Controller() : GUIEvent {
         execute(RenameSectionCommand(entity, name, newName))
     }
 
-    override fun changeAttributeText(entity: ObservableEntity, name:String, insideText:String){
-        entity.changeAttributeText(name, insideText)
+    override fun changeAttributeText(entity: ObservableEntity, name:String, insideText:String,insideTextOld:String){
+        execute(ChangeAttributeTextCommand(entity, name, insideText,insideTextOld))
     }
 
-    override fun changeSectionText(entity: ObservableEntity, name:String, insideText:String){
-        entity.changeSectionText(name, insideText)
+    override fun changeSectionText(entity: ObservableEntity, name:String, insideText:String, insideTextOld:String){
+        execute(ChangeSectionTextCommand(entity, name, insideText,insideTextOld))
     }
 
     fun clearStack(){

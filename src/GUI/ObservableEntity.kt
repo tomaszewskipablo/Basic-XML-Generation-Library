@@ -61,10 +61,16 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
 
     fun changeAttributeText(name: String, insideText: String) {
        entityObject.changeAttributeText(name, insideText)
+        notifyObservers {
+            it(TypeEvent.ChangeAttributeInsideText, name, insideText, null)
+        }
     }
 
     fun changeSectionText(name: String, insideText: String) {
         entityObject.changeSectionText(name, insideText)
+        notifyObservers {
+            it(TypeEvent.ChangeSectionInsideText, name, insideText, null)
+        }
     }
 
     fun renameAttribute(name: String, nameNew: String) {
@@ -153,7 +159,7 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
                             parentEntity.addSection(fieldName(it),it.call(o).toString())
                         }
                     } else if (it.call(o)!!::class.isData) {
-                        var dataClassEntity = addEntity(it.name)                
+                        var dataClassEntity = addEntity(it.name)
                         var obserEntity = ObservableEntity(dataClassEntity)     // TODO DATACLASS IS NOT BEING OBSERVED
                         createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), obserEntity)
                     } else {
@@ -185,4 +191,4 @@ interface IObservable<O> {
 }
 typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, entity: Entity?) -> Unit
 
-enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, RemoveAttribute, RenameAttribute, AddSection,RemoveSection, RenameSection}
+enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, RemoveAttribute, RenameAttribute, AddSection,RemoveSection, RenameSection, ChangeAttributeInsideText, ChangeSectionInsideText}

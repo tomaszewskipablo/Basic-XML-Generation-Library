@@ -219,7 +219,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     }
 
     /**
-     * Implements Entity.escapespecialCharacter
+     * Implements Entity.escapeSpecialCharacter
      *
      * Replace escaping charcaters in a string by certain characters
      *
