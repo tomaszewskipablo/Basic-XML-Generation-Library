@@ -102,9 +102,10 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         else if(typeEvent == TypeEvent.ChangeSectionInsideText) {
             val element = components.find { it is ConcreteEntityComponent && name == it.text }
             if(element != null) {
-                val attributeElement = element as ConcreteEntityComponent
-                attributeElement.text = value!!
-                attributeElement.jLabel.text = value
+                val concreteEntity = element as ConcreteEntityComponent
+                concreteEntity.text = value!!
+                concreteEntity.jTextField.text = value!!
+                concreteEntity.insideTextField = value!!
             }
         }
         revalidate()

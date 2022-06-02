@@ -1,8 +1,6 @@
-import org.w3c.dom.Attr
 import kotlin.reflect.full.declaredMemberProperties
 
 class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
-
     override val observers: MutableList<Event> = mutableListOf()
 
     fun renameEntity(nameNew: String){
@@ -33,10 +31,10 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
         }
     }
 
-    fun addEntity(name: String) : Entity {
-        val e = entityObject.addEntity(name)
+    fun addEntity(name: String) : ObservableEntity {
+        val e = ObservableEntity(entityObject.addEntity(name))
         notifyObservers {
-            it(TypeEvent.AddEntity, "", "", e)
+            it(TypeEvent.AddEntity, "", "", e.entityObject)
         }
         return e
     }
@@ -160,8 +158,7 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
                         }
                     } else if (it.call(o)!!::class.isData) {
                         var dataClassEntity = addEntity(it.name)
-                        var obserEntity = ObservableEntity(dataClassEntity)     // TODO DATACLASS IS NOT BEING OBSERVED
-                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), obserEntity)
+                        createXMLObject(it.call(o)!!::class.javaObjectType.cast(it.call(o)), dataClassEntity)
                     } else {
                         if (innerText(it, o)) {
                             parentEntity.addSection(fieldName(it),it.call(o).toString())
@@ -174,6 +171,7 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
         }
     }
 }
+
 interface IObservable<O> {
     val observers: MutableList<O>
 
@@ -189,6 +187,7 @@ interface IObservable<O> {
         observers.toList().forEach { handler(it) }
     }
 }
+
 typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, entity: Entity?) -> Unit
 
 enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, RemoveAttribute, RenameAttribute, AddSection,RemoveSection, RenameSection, ChangeAttributeInsideText, ChangeSectionInsideText}

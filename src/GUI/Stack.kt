@@ -26,6 +26,8 @@ class UndoStack {
     fun clearStack(){
         while (stack.isNotEmpty())
             stack.pop().undo()
+        while (redoStack.isNotEmpty())
+            stack.pop().undo()
     }
 }
 
@@ -35,12 +37,13 @@ interface Command {
 }
 
 class AddCommand(val entityParent: ObservableEntity, val name: String) : Command {
+    private lateinit var child: ObservableEntity
     override fun run() {
-        entityParent.addEntity(name)
+        child = entityParent.addEntity(name)
     }
 
     override fun undo() {
-        entityParent.removeEntity(name)
+        entityParent.removeEntity(child.entityObject.name)
     }
 }
 
