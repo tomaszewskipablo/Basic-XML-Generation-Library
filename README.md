@@ -1,7 +1,7 @@
 # Basic-XML-Generation-Library
 XML Generation Library in kotlin - University Institute of Lisbon
 
-### 1. Data model description
+## 1. Data model description
 
 Data model implements composit design pattern. 
 
@@ -32,7 +32,7 @@ EntityConcrete("sectionName", "insideText", parent)
 
 Both Entity and EntityContrete implements accept method for Visitor pattern.  
 
-## 2. how to use the data model
+## 2. How to use the data model
 
 Function **createXMLObject** can be used to create XML object from object from the memory.  
 
@@ -70,6 +70,44 @@ Root Entity can be injeted into xml object that wrapps Entity and contains eleme
 var xml = Xml(root, "1.0", "UTF-8", "no")
 ```
 
+Xml class contains **serialize()** function to serialize root element with the header before.
 
 
-## 2. how to use automatic inference (Phase 2)
+
+## 3. How to use automatic inference
+Automatic inferance consist of 3 annonations: </br></br>
+@XmlIgnore</br>
+This meta-annotation determines whether object is treated as EntityConcrete class, applies only to non-dataclasses objects. 
+Results in serializing by printing object property as the content between the tags.</br></br>
+@XmlTagContent</br>
+This meta-annotation determines whether object is omitted when generating XML object.</br></br>
+@XmlName("New Name")</br>
+This meta-annotation determines whether class or property name has different name then original one. In thsi example class or property in XML representation object would be "New Name".</br>
+
+Example use of automatic inference </br>
+```
+@XmlName("STUDENT")
+data class Student(
+    @XmlTagContent
+    val number: Int,
+    val book: Book,
+    val name: String,
+    @XmlIgnore
+    val secondName: String,
+    @XmlTagContent
+    val type: StudentType? = null,
+    @XmlTagContent
+    val lista: List<String> = listOf("Ajay","Vijay","Prakash"),
+)
+```
+
+## 4. How to use automatic inference
+In project in GUI package, Graphical app can be found. App lets user create and edit XML object, by using one of the 9 option from option menu. Option manu can be dislplayed by clicking right mouse click.</br>
+
+<img src="https://user-images.githubusercontent.com/32485994/171948434-683b8ef0-a130-4238-8a6c-3ee787f98803.png" width=40% height=40%>
+
+Entity can be serialized to a file or console.</br>
+
+GUI lets user load default hard coded entity.</br>
+<img src="https://user-images.githubusercontent.com/32485994/171947866-e1f091d5-bf0e-4d55-86a5-d6121fa06e3e.png" width=40% height=40%>
+
