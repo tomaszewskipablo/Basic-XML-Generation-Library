@@ -48,12 +48,13 @@ class AddCommand(val entityParent: ObservableEntity, val name: String) : Command
 }
 
 class RemoveCommand(val entityParent: ObservableEntity, val name: String) : Command {
+    private lateinit var child: ObservableEntity
     override fun run() {
-        entityParent.removeEntity(name)
+        child = entityParent.removeEntity(name)
     }
 
     override fun undo() {
-        entityParent.addEntity(name)
+        entityParent.addEntity(child)
     }
 }
 

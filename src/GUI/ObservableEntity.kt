@@ -24,19 +24,28 @@ class ObservableEntity(var entityObject: Entity) :IObservable<Event> {
         }
     }
 
-    fun removeEntity(name:String) {
-        entityObject.removeEntity(name)
+    fun removeEntity(name:String): ObservableEntity {
+        val e = ObservableEntity(entityObject.removeEntity(name))
         notifyObservers {
             it(TypeEvent.RemoveEntity, name, "", null)
         }
+        return e
     }
 
     fun addEntity(name: String) : ObservableEntity {
         val e = ObservableEntity(entityObject.addEntity(name))
         notifyObservers {
-            it(TypeEvent.AddEntity, "", "", e.entityObject)
+            it(TypeEvent.AddEntity, "", "", e)
         }
         return e
+    }
+
+    fun addEntity(observableEntity: ObservableEntity) : ObservableEntity {
+        entityObject.addEntity(observableEntity.entityObject)
+        notifyObservers {
+            it(TypeEvent.AddEntity, "", "", observableEntity)
+        }
+        return observableEntity
     }
 
     fun addSection(sectionName: String, insideText: String) {
@@ -188,6 +197,6 @@ interface IObservable<O> {
     }
 }
 
-typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, entity: Entity?) -> Unit
+typealias Event = (typeEvent:TypeEvent,name: String?, value:String?, observableEntity: ObservableEntity?) -> Unit
 
 enum class TypeEvent {RenameEntity,RemoveEntity, AddEntity, AddAttribute, RemoveAttribute, RenameAttribute, AddSection,RemoveSection, RenameSection, ChangeAttributeInsideText, ChangeSectionInsideText}

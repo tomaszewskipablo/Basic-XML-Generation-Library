@@ -22,10 +22,9 @@ interface GUIEvent {
     fun changeAttributeText(entity: ObservableEntity, name: String, insideText: String, insideTextOld: String)
 }
 
-class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel(), IObservable<GUIEvent> {
+class ComponentSkeleton(var observableEntity: ObservableEntity, val controller: Controller) : JPanel(), IObservable<GUIEvent> {
     override val observers: MutableList<GUIEvent> = mutableListOf<GUIEvent>()
-    var observableEntity = ObservableEntity(entity)
-    var nameEntity = entity.name
+    var nameEntity = observableEntity.entityObject.name
 
     override fun paintComponent(g: Graphics) {
         super.paintComponent(g)
@@ -41,12 +40,12 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         )
         createPopupMenu()
 
-        observableEntity.addObserver {Event, value, name, entity -> handleThisEvent(Event, value, name, entity) }
+        observableEntity.addObserver {Event, value, name, observableEntity -> handleThisEvent(Event, value, name, observableEntity) }
         addObserver(controller)
     }
 
     // Update View
-    fun handleThisEvent(typeEvent: TypeEvent, name: String?, value: String?, child: Entity?){
+    fun handleThisEvent(typeEvent: TypeEvent, name: String?, value: String?, child: ObservableEntity?){
         if(typeEvent == TypeEvent.RenameEntity) {
             nameEntity = name!!
         }
@@ -166,7 +165,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         val renameAttributeButton = JMenuItem("Rename attribute")
         renameAttributeButton.addActionListener {
             val attributeName = JOptionPane.showInputDialog("Which attribute should be renamed?")
-            if(entity.attributes[attributeName] != null) {
+            if(observableEntity.entityObject.attributes[attributeName] != null) {
                 val newName = JOptionPane.showInputDialog("New name")
                 notifyObservers {
                     it.renameAttribute(observableEntity, attributeName, newName)
@@ -191,7 +190,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         removeSectionButton.background = Color.GRAY
         removeSectionButton.addActionListener {
             val text = JOptionPane.showInputDialog("Section name")
-            val element = entity.children.find{it.name == text}
+            val element = observableEntity.entityObject.children.find{it.name == text}
             if(element != null) {
                 val s = element as EntityConcrete
                 notifyObservers {
@@ -206,7 +205,7 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
         renameSectionButton.background = Color.GRAY
         renameSectionButton.addActionListener {
             val sectionName = JOptionPane.showInputDialog("Which section should be renamed?")
-            if(entity.children.find{it.name == sectionName} != null) {
+            if(observableEntity.entityObject.children.find{it.name == sectionName} != null) {
                 val newName = JOptionPane.showInputDialog("New name")
                 notifyObservers {
                     it.renameSection(observableEntity, sectionName, newName)
@@ -275,18 +274,18 @@ class ComponentSkeleton(var entity: Entity, val controller: Controller) : JPanel
 }
 
 class WindowSkeleton(var root: Entity, var controller: Controller, val version:String,
-                     val codding:String, val standalone:String) : JFrame("title") {
+                     val codding:String, val standalone:String) : JFrame("Serialization GUI") {
     var xmlHeader = "<?xml version=\"$version\" encoding=\"$codding\" standalone=\"$standalone\" ?>"
     lateinit var componentSkeleton: ComponentSkeleton
     var modeWriteToList: MutableList<WriteToMode> = mutableListOf()
-
+    var observableEntityRoot = ObservableEntity(root)
     var jScrollPane = JScrollPane()
 
     init {
         defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         size = Dimension(700, 900)
         layout = BorderLayout()
-        componentSkeleton = ComponentSkeleton(root, controller)
+        componentSkeleton = ComponentSkeleton(observableEntityRoot, controller)
         jScrollPane.viewport.add(componentSkeleton)
         add(jScrollPane)
 
@@ -374,6 +373,7 @@ enum class WriteToMode {File, Console}
 
 fun main() {
     var root = Entity("default name",null)
+
     var controller = Controller()
     val w = WindowSkeleton(root, controller, "1.0","UTF-8", "no")
 

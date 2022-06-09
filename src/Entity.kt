@@ -24,14 +24,50 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     val children = mutableListOf<EntityAbstract>()
     var attributes = HashMap<String, String>()
 
-     /**
+    /**
+     * Implements Entity.addEntity
+     * adds new entity to entity children list
+     *
+     * @param name new of new entity
+     * @return Entity
+     */
+    fun addEntity(name: String):Entity{
+        return Entity(name, this)
+    }
+    /**
+     * Implements Entity.addEntity
+     * adds new entity to entity children list
+     *
+     * @param name new of new entity
+     *  @return Entity
+     */
+    fun addEntity(entity: Entity):Entity{
+        this.children.add(entity)
+        entity.parent = this
+        return entity
+    }
+
+    /**
+     * Implements Entity.removeEntity
+     * Removes entities from entity children list
+     *
+     * @param name name of entity to be removed
+     */
+    fun removeEntity(name: String): Entity{
+        val s = children.find { it.name == name }
+        children.remove(s)
+        return s as Entity
+    }
+
+    /**
      * Implements Entity.renameEntity
      *
      * @param nameNew new name for entity
      */
-    fun renameEntity(nameNew: String){
+    fun renameEntity(nameNew: String):Entity{
         super.name = nameNew
         name = nameNew
+        return this
     }
 
     /**
@@ -41,8 +77,9 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
      * @param attributeName key for attribute for entity
      * @param insideText value for attribute for entity
      */
-    fun addAttribute(attributeName:String, insideText:String ){
+    fun addAttribute(attributeName:String, insideText:String ):Entity{
         attributes[attributeName] = insideText
+        return this
     }
 
     /**
@@ -57,24 +94,22 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
     }
 
     /**
-     * Implements Entity.removeEntity
-     * Removes entities from entity children list
+     * Implements Entity.renameAttribute
      *
-     * @param name name of entity to be removed
-     */
-    fun removeEntity(name: String){
-        val s = children.find { it.name == name }
-        children.remove(s)
-    }
-
-    /**
-     * Implements Entity.addEntity
-     * adds new entity to entity children list
+     * renames entity's attribute
      *
-     * @param name new of new entity
+     * @param sectionName name of attribute
+     * @param insideText value for inside text of attribute
+     * @param Boolean
      */
-    fun addEntity(name: String):Entity{
-        return Entity(name, this)
+    fun renameAttribute(name: String, nameNew:String): Boolean{
+        if(attributes.containsKey(name)) {
+            val value = attributes[name]
+            attributes.remove(name)
+            attributes[nameNew] = value!!
+            return true
+        }
+        return false
     }
 
     /**
@@ -87,8 +122,9 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
      * @param sectionName name of section
      * @param insideText value for inside text of section
      */
-    fun addSection(sectionName: String, insideText: String){
+    fun addSection(sectionName: String, insideText: String):Entity{
         val n = EntityConcrete(sectionName, insideText, this)
+        return this
     }
 
     /**
@@ -100,12 +136,30 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
      * @param sectionName name of section
      * @param insideText value for inside text of section
      */
-    fun removeSection(sectionName: String, insideText: String){
+    fun removeSection(sectionName: String, insideText: String=""){
         val element = children.find {  it.name == sectionName } // it is ConcreteEntityComponent &&
         if(element != null) {
             val toBeRemoved = element as EntityConcrete
             children.remove(toBeRemoved)
         }
+    }
+
+    /**
+     * Implements Entity.renameSection
+     *
+     * renames entity's section
+     *
+     * @param sectionName name of section
+     * @param insideText value for inside text of section
+     */
+    fun renameSection(name: String, nameNew:String) : Boolean{
+        val element = children.find {  it.name == name } // it is ConcreteEntityComponent &&
+        if(element != null) {
+            val toBeRenamed = element as EntityConcrete
+            toBeRenamed!!.name = nameNew
+            return true
+        }
+        return false
     }
 
     /**
@@ -135,44 +189,6 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
             toBeChanged.innerText = insideText
         }
     }
-
-    /**
-     * Implements Entity.renameAttribute
-     *
-     * renames entity's attribute
-     *
-     * @param sectionName name of attribute
-     * @param insideText value for inside text of attribute
-     */
-    fun renameAttribute(name: String, nameNew:String): Boolean{
-        if(attributes.containsKey(name)) {
-            val value = attributes[name]
-            attributes.remove(name)
-            attributes[nameNew] = value!!
-            return true
-        }
-        return false
-    }
-
-    /**
-     * Implements Entity.renameSection
-     *
-     * renames entity's section
-     *
-     * @param sectionName name of section
-     * @param insideText value for inside text of section
-     */
-    fun renameSection(name: String, nameNew:String) : Boolean{
-        val element = children.find {  it.name == name } // it is ConcreteEntityComponent &&
-        if(element != null) {
-            val toBeRenamed = element as EntityConcrete
-            toBeRenamed!!.name = nameNew
-            return true
-        }
-        return false
-    }
-
-
 
     override var name: String = name
         set(value) {
@@ -227,7 +243,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
      *
      * @return text with special characters replaced
      */
-    fun escapeSpecialCharacter(text: String):String{
+    private fun escapeSpecialCharacter(text: String):String{
         return text
             .replace("<", "&lt;")
             .replace("&","&amp;")
@@ -272,7 +288,7 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
      *
      * @return text representing entity's attributes
      */
-    fun writeAttributes(att:HashMap<String, String>):String{
+    private fun writeAttributes(att:HashMap<String, String>):String{
         var attributes = ""
         att.forEach(){
             attributes += " " + escapeSpecialCharacter(it.key) + "=\"" + escapeSpecialCharacter(it.value) + "\""
@@ -300,7 +316,6 @@ class Entity(name: String, parent: Entity? = null) : EntityAbstract(name, parent
                     if (it.returnType.classifier.isCollection()) {
                         if (innerText(it, o)) {
                             var listName = it.name
-                            val listEntity = parentEntity.addEntity(tableName(obj)!!)
                             val coll = it.call(o) as Collection<*>
                             coll.forEach {
                                 if (it != null) {
